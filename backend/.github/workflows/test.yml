@@ -1,0 +1,165 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      firestore:
+        image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+        ports:
+          - 8080:8080
+        env:
+          FIRESTORE_PROJECT_ID: test-project
+        options: >-
+          --health-cmd "curl -f http://localhost:8080 || exit 1"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        cache-dependency-path: |
+          backend/requirements.txt
+          backend/requirements-test.txt
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+    
+    - name: Start Firestore emulator
+      run: |
+        gcloud emulators firestore start --host-port=localhost:8080 --project=test-project &
+        sleep 10
+    
+    - name: Run linting
+      working-directory: ./backend
+      run: |
+        ruff check src tests
+        black --check src tests
+    
+    - name: Run type checking
+      working-directory: ./backend
+      run: |
+        mypy src
+    
+    - name: Run security scan
+      working-directory: ./backend
+      run: |
+        bandit -r src -ll
+    
+    - name: Run unit tests
+      working-directory: ./backend
+      env:
+        DEBUG: false
+        ENVIRONMENT: testing
+        USE_FIRESTORE_EMULATOR: true
+        FIRESTORE_EMULATOR_HOST: localhost:8080
+        GOOGLE_CLIENT_ID: test-client-id
+        SECRET_KEY: test-secret-key
+        FIRESTORE_PROJECT_ID: test-project
+      run: |
+        pytest tests/unit -v --cov=src --cov-report=xml --cov-report=term-missing
+    
+    - name: Run integration tests
+      working-directory: ./backend
+      env:
+        DEBUG: false
+        ENVIRONMENT: testing
+        USE_FIRESTORE_EMULATOR: true
+        FIRESTORE_EMULATOR_HOST: localhost:8080
+        GOOGLE_CLIENT_ID: test-client-id
+        SECRET_KEY: test-secret-key
+        FIRESTORE_PROJECT_ID: test-project
+      run: |
+        pytest tests/integration -v --cov=src --cov-append --cov-report=xml
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+        directory: ./backend
+        flags: backend
+        name: backend-coverage
+    
+    - name: Check coverage threshold
+      working-directory: ./backend
+      run: |
+        coverage report --fail-under=85
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      working-directory: ./backend
+      run: |
+        docker build -t financial-nomad-api:test .
+    
+    - name: Test Docker image
+      working-directory: ./backend
+      run: |
+        docker run --rm financial-nomad-api:test python -c "import src.main; print('Import successful')"
+
+  security:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install security tools
+      working-directory: ./backend
+      run: |
+        pip install bandit safety
+    
+    - name: Run Bandit security scan
+      working-directory: ./backend
+      run: |
+        bandit -r src -f json -o bandit-report.json || true
+    
+    - name: Run Safety check
+      working-directory: ./backend
+      run: |
+        safety check --json --output safety-report.json || true
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          backend/bandit-report.json
+          backend/safety-report.json

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  test-firestore:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+    ports:
+      - "8081:8080"  # Different port to avoid conflicts
+    environment:
+      - FIRESTORE_PROJECT_ID=test-project
+    command: >
+      sh -c "gcloud emulators firestore start 
+             --host-port=0.0.0.0:8080 
+             --project=test-project"
+    networks:
+      - financial-nomad-test
+
+  test-runner:
+    build:
+      context: .
+      target: testing
+    environment:
+      - DEBUG=false
+      - ENVIRONMENT=testing
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=test-firestore:8080
+      - GOOGLE_CLIENT_ID=test-client-id
+      - SECRET_KEY=test-secret-key
+      - FIRESTORE_PROJECT_ID=test-project
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./coverage.xml:/app/coverage.xml
+      - ./htmlcov:/app/htmlcov
+    depends_on:
+      - test-firestore
+    networks:
+      - financial-nomad-test
+    command: ["pytest", "-v", "--cov=src", "--cov-report=xml", "--cov-report=html"]
+
+networks:
+  financial-nomad-test:
+    driver: bridge

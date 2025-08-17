@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      target: development
+    ports:
+      - "8080:8080"
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - GOOGLE_CLIENT_ID=dev-client-id
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - FIRESTORE_PROJECT_ID=dev-project
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./.env:/app/.env
+    depends_on:
+      - firestore
+    networks:
+      - financial-nomad
+
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+    ports:
+      - "8080:8080"  # Firestore emulator
+      - "4000:4000"  # Firestore UI
+    environment:
+      - FIRESTORE_PROJECT_ID=dev-project
+    command: >
+      sh -c "gcloud emulators firestore start 
+             --host-port=0.0.0.0:8080 
+             --project=dev-project"
+    networks:
+      - financial-nomad
+
+  test:
+    build:
+      context: .
+      target: testing
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=testing
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore:8080
+      - GOOGLE_CLIENT_ID=test-client-id
+      - SECRET_KEY=test-secret-key
+      - FIRESTORE_PROJECT_ID=test-project
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./coverage.xml:/app/coverage.xml
+      - ./htmlcov:/app/htmlcov
+    depends_on:
+      - firestore
+    networks:
+      - financial-nomad
+    profiles:
+      - testing
+
+networks:
+  financial-nomad:
+    driver: bridge
+
+volumes:
+  firestore_data:

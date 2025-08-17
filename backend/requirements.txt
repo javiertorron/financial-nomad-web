@@ -1,0 +1,53 @@
+# FastAPI and server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+google-cloud-firestore==2.13.1
+
+# Authentication and security
+pyjwt[crypto]==2.8.0
+google-auth==2.25.2
+google-auth-oauthlib==1.1.0
+passlib[bcrypt]==1.7.4
+python-decouple==3.8
+
+# HTTP client
+httpx==0.25.2
+
+# Validation and serialization
+pydantic[email]==2.5.0
+pydantic-settings==2.1.0
+
+# Date/time handling
+python-dateutil==2.8.2
+
+# YAML support
+PyYAML==6.0.1
+
+# Logging and monitoring
+structlog==23.2.0
+
+# Rate limiting
+slowapi==0.1.9
+
+# CORS and middleware
+python-cors==1.7.0
+
+# Development dependencies (will be separated later)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+httpx==0.25.2  # For TestClient
+factory-boy==3.3.0
+
+# Code quality
+ruff==0.1.6
+black==23.11.0
+mypy==1.7.1
+bandit==1.7.5
+
+# Environment
+python-dotenv==1.0.0
