@@ -1,0 +1,216 @@
+version: '3.8'
+
+services:
+  # Frontend para testing
+  frontend-test:
+    build:
+      context: ../../frontend
+      dockerfile: ../devops/docker/frontend/Dockerfile.dev
+    container_name: financial-nomad-frontend-test
+    ports:
+      - "4201:4200"
+    environment:
+      - NODE_ENV=testing
+      - API_URL=http://backend-test:8080/api/v1
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-test-client-id}
+      - CHOKIDAR_USEPOLLING=false
+    depends_on:
+      backend-test:
+        condition: service_healthy
+    networks:
+      - financial-nomad-test-network
+    profiles:
+      - test
+
+  # Backend para testing
+  backend-test:
+    build:
+      context: ../../backend
+      dockerfile: ../devops/docker/backend/Dockerfile.dev
+    container_name: financial-nomad-backend-test
+    ports:
+      - "8082:8080"
+    environment:
+      - DEBUG=false
+      - ENVIRONMENT=testing
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator-test:8081
+      - FIRESTORE_PROJECT_ID=financial-nomad-test
+      - SECRET_KEY=test-secret-key-not-for-production
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-test-client-id}
+      - LOG_LEVEL=WARNING
+      - RATE_LIMIT_PER_MINUTE=10000
+    depends_on:
+      firestore-emulator-test:
+        condition: service_healthy
+    networks:
+      - financial-nomad-test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    profiles:
+      - test
+
+  # Firestore Emulator para testing
+  firestore-emulator-test:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+    container_name: financial-nomad-firestore-test
+    ports:
+      - "8083:8081"  # Puerto diferente para no conflictar
+      - "4001:4000"  # UI en puerto diferente
+    command: >
+      sh -c "
+        gcloud config set project financial-nomad-test &&
+        gcloud emulators firestore start 
+          --project=financial-nomad-test 
+          --host-port=0.0.0.0:8081 
+          --rules=/firestore/firestore.rules
+      "
+    volumes:
+      - ../firebase/firestore.rules:/firestore/firestore.rules:ro
+    environment:
+      - FIRESTORE_PROJECT_ID=financial-nomad-test
+      - GCLOUD_PROJECT=financial-nomad-test
+    networks:
+      - financial-nomad-test-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    profiles:
+      - test
+
+  # Playwright para E2E testing
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.40.0-focal
+    container_name: financial-nomad-playwright
+    working_dir: /app
+    volumes:
+      - ../../frontend:/app
+      - playwright-cache:/ms-playwright
+    environment:
+      - PLAYWRIGHT_BASE_URL=http://frontend-test:4200
+      - API_BASE_URL=http://backend-test:8080/api/v1
+      - CI=true
+    command: >
+      sh -c "
+        npm ci &&
+        npx playwright install --with-deps &&
+        npx playwright test --reporter=html
+      "
+    depends_on:
+      frontend-test:
+        condition: service_started
+      backend-test:
+        condition: service_healthy
+    networks:
+      - financial-nomad-test-network
+    profiles:
+      - e2e
+
+  # Servicio para tests unitarios del backend
+  backend-unit-tests:
+    build:
+      context: ../../backend
+      dockerfile: ../devops/docker/backend/Dockerfile.dev
+    container_name: financial-nomad-backend-unit-tests
+    environment:
+      - ENVIRONMENT=testing
+      - DEBUG=false
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator-test:8081
+      - FIRESTORE_PROJECT_ID=financial-nomad-test
+    volumes:
+      - ../../backend:/app
+      - backend-test-cache:/app/.pytest_cache
+    command: >
+      sh -c "
+        python -m pytest tests/unit/ 
+          --verbose 
+          --cov=src 
+          --cov-report=html 
+          --cov-report=xml 
+          --cov-report=term 
+          --junit-xml=test-results/junit.xml
+      "
+    depends_on:
+      firestore-emulator-test:
+        condition: service_healthy
+    networks:
+      - financial-nomad-test-network
+    profiles:
+      - unit-tests
+
+  # Servicio para tests de integración del backend
+  backend-integration-tests:
+    build:
+      context: ../../backend
+      dockerfile: ../devops/docker/backend/Dockerfile.dev
+    container_name: financial-nomad-backend-integration-tests
+    environment:
+      - ENVIRONMENT=testing
+      - DEBUG=false
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator-test:8081
+      - FIRESTORE_PROJECT_ID=financial-nomad-test
+    volumes:
+      - ../../backend:/app
+      - backend-test-cache:/app/.pytest_cache
+    command: >
+      sh -c "
+        python -m pytest tests/integration/ 
+          --verbose 
+          --cov=src 
+          --cov-report=html 
+          --cov-report=xml 
+          --junit-xml=test-results/integration-junit.xml
+      "
+    depends_on:
+      firestore-emulator-test:
+        condition: service_healthy
+    networks:
+      - financial-nomad-test-network
+    profiles:
+      - integration-tests
+
+  # Servicio para tests unitarios del frontend
+  frontend-unit-tests:
+    build:
+      context: ../../frontend
+      dockerfile: ../devops/docker/frontend/Dockerfile.dev
+    container_name: financial-nomad-frontend-unit-tests
+    environment:
+      - NODE_ENV=testing
+      - CI=true
+    volumes:
+      - ../../frontend:/app
+      - frontend-test-cache:/app/node_modules
+    command: >
+      sh -c "
+        npm ci &&
+        npm run test:ci
+      "
+    networks:
+      - financial-nomad-test-network
+    profiles:
+      - unit-tests
+
+volumes:
+  backend-test-cache:
+    driver: local
+  frontend-test-cache:
+    driver: local
+  playwright-cache:
+    driver: local
+
+networks:
+  financial-nomad-test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

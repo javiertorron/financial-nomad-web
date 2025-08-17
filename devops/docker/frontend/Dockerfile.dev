@@ -1,0 +1,43 @@
+# Dockerfile para desarrollo Frontend Angular
+FROM node:20-alpine
+
+# Instalar herramientas de desarrollo
+RUN apk add --no-cache git curl
+
+WORKDIR /app
+
+# Crear usuario no-root para seguridad
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S angular -u 1001 -G nodejs
+
+# Instalar Angular CLI globalmente
+RUN npm install -g @angular/cli@18
+
+# Copiar package files primero para cache de layers
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm ci --include=dev
+
+# Cambiar ownership de node_modules
+RUN chown -R angular:nodejs node_modules
+
+# Copiar resto del código
+COPY --chown=angular:nodejs . .
+
+# Crear directorios necesarios
+RUN mkdir -p .angular/cache && \
+    chown -R angular:nodejs .angular
+
+# Cambiar a usuario no-root
+USER angular
+
+# Exponer puerto
+EXPOSE 4200
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:4200 || exit 1
+
+# Comando para desarrollo con hot reload
+CMD ["ng", "serve", "--host", "0.0.0.0", "--port", "4200", "--poll", "2000", "--live-reload", "true"]

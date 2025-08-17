@@ -1,0 +1,168 @@
+version: '3.8'
+
+services:
+  # Frontend Angular con hot reload
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: ../devops/docker/frontend/Dockerfile.dev
+    container_name: financial-nomad-frontend-dev
+    ports:
+      - "4200:4200"
+    volumes:
+      - ../../frontend:/app
+      - /app/node_modules
+      - frontend-cache:/app/.angular
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - API_URL=http://localhost:8080/api/v1
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+    depends_on:
+      - backend
+    networks:
+      - financial-nomad-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`) && !PathPrefix(`/api`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=4200"
+
+  # Backend FastAPI con hot reload
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: ../devops/docker/backend/Dockerfile.dev
+    container_name: financial-nomad-backend-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../backend:/app
+      - backend-cache:/app/.pytest_cache
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8081
+      - FIRESTORE_PROJECT_ID=financial-nomad-dev
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-not-for-production}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - CORS_ORIGINS=["http://localhost:4200", "http://localhost:80"]
+      - LOG_LEVEL=DEBUG
+      - RATE_LIMIT_PER_MINUTE=1000
+    depends_on:
+      firestore-emulator:
+        condition: service_healthy
+    networks:
+      - financial-nomad-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+
+  # Firestore Emulator
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+    container_name: financial-nomad-firestore-dev
+    ports:
+      - "8081:8081"  # Firestore emulator
+      - "4000:4000"  # Firestore UI
+    command: >
+      sh -c "
+        gcloud config set project financial-nomad-dev &&
+        gcloud emulators firestore start 
+          --project=financial-nomad-dev 
+          --host-port=0.0.0.0:8081 
+          --rules=/firestore/firestore.rules
+      "
+    volumes:
+      - ../firebase/firestore.rules:/firestore/firestore.rules:ro
+      - firestore-data:/opt/data
+    environment:
+      - FIRESTORE_PROJECT_ID=financial-nomad-dev
+      - GCLOUD_PROJECT=financial-nomad-dev
+    networks:
+      - financial-nomad-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Nginx Proxy para routing
+  nginx:
+    image: nginx:alpine
+    container_name: financial-nomad-nginx-dev
+    ports:
+      - "80:80"
+    volumes:
+      - ../nginx/dev.conf:/etc/nginx/nginx.conf:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - financial-nomad-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis para caching (opcional pero útil)
+  redis:
+    image: redis:7-alpine
+    container_name: financial-nomad-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - financial-nomad-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  # Mailhog para testing de emails (opcional)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: financial-nomad-mailhog-dev
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - financial-nomad-network
+    restart: unless-stopped
+
+volumes:
+  firestore-data:
+    driver: local
+  redis-data:
+    driver: local
+  frontend-cache:
+    driver: local
+  backend-cache:
+    driver: local
+  nginx-logs:
+    driver: local
+
+networks:
+  financial-nomad-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

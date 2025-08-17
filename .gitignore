@@ -1,0 +1,201 @@
+# ==============================================
+# ARCHIVOS DE CONFIGURACIÓN SENSIBLES
+# ==============================================
+.env
+.env.local
+.env.production
+.env.test
+*.pem
+*.key
+*.crt
+
+# ==============================================
+# DEPENDENCIAS Y CACHE
+# ==============================================
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.pytest_cache/
+.cache/
+
+# ==============================================
+# LOGS Y TEMPORALES
+# ==============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ==============================================
+# DIRECTORIOS DE BUILD
+# ==============================================
+dist/
+build/
+.angular/
+.next/
+out/
+target/
+
+# ==============================================
+# IDEs Y EDITORES
+# ==============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==============================================
+# DOCKER
+# ==============================================
+Dockerfile.prod
+docker-compose.override.yml
+.dockerignore
+
+# ==============================================
+# TESTING
+# ==============================================
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+
+# ==============================================
+# REPORTES Y DOCUMENTACIÓN GENERADA
+# ==============================================
+htmlcov/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# ==============================================
+# ARCHIVOS DE SISTEMA OPERATIVO
+# ==============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==============================================
+# FIREBASE
+# ==============================================
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# ==============================================
+# GOOGLE CLOUD
+# ==============================================
+gcloud-service-account.json
+service-account-key.json
+google-credentials.json
+
+# ==============================================
+# DESARROLLO LOCAL
+# ==============================================
+.localstack/
+.terraform/
+terraform.tfstate*
+*.tfvars
+
+# ==============================================
+# ARCHIVOS DE BACKUP Y TEMPORALES
+# ==============================================
+*.bak
+*.tmp
+*.temp
+*~
+.#*
+
+# ==============================================
+# PYTHON ESPECÍFICO
+# ==============================================
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+pip-wheel-metadata/
+share/python-wheels/
+
+# ==============================================
+# NODE.JS ESPECÍFICO
+# ==============================================
+.npm
+.eslintcache
+jspm_packages/
+web_modules/
+*.tsbuildinfo
+.yarn-integrity
+
+# ==============================================
+# ANGULAR ESPECÍFICO
+# ==============================================
+.angular/cache/
+.sass-cache/
+connect.lock
+typings/
+
+# ==============================================
+# ARCHIVOS DE CONFIGURACIÓN LOCAL
+# ==============================================
+.local/
+.config/local/
+config/local.json
+config/local.js
+
+# ==============================================
+# ARCHIVOS DE MONITOREO Y MÉTRICAS
+# ==============================================
+.prometheus/
+.grafana/
+monitoring/data/
+
+# ==============================================
+# CERTIFICADOS SSL LOCALES
+# ==============================================
+certs/
+ssl/
+*.csr
+*.der
+*.p12
+*.pfx
+
+# ==============================================
+# DATOS LOCALES
+# ==============================================
+data/
+storage/
+uploads/
+downloads/
+
+# Permitir algunos archivos importantes
+!.gitkeep
+!.github/
+!.vscode/settings.json.example
