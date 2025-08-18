@@ -44,15 +44,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class RateLimitingMiddleware:
+class RateLimitingMiddleware(BaseHTTPMiddleware):
     """Simple in-memory rate limiting middleware."""
     
     def __init__(self, app: Callable):
-        self.app = app
+        super().__init__(app)
         self.request_counts = {}
         self.last_reset = {}
     
-    async def __call__(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Apply rate limiting based on client IP."""
         client_ip = self._get_client_ip(request)
         current_time = time.time()

@@ -16,13 +16,13 @@ from src.utils.exceptions import AppException
 logger = structlog.get_logger()
 
 
-class ErrorHandlerMiddleware:
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class ErrorHandlerMiddleware(BaseHTTPMiddleware):
     """Middleware to handle exceptions and format error responses."""
     
-    def __init__(self, app: Callable):
-        self.app = app
-    
-    async def __call__(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request and handle any exceptions."""
         # Generate request ID if not present
         request_id = request.headers.get("x-request-id", str(uuid.uuid4()))

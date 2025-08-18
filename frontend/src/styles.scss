@@ -1,25 +1,3 @@
-// Material Design Theme
-@use '@angular/material' as mat;
-
-// Custom theme colors
-$primary-palette: mat.define-palette(mat.$blue-palette, 600);
-$accent-palette: mat.define-palette(mat.$green-palette, 500);
-$warn-palette: mat.define-palette(mat.$red-palette, 500);
-
-// Create theme
-$theme: mat.define-light-theme((
-  color: (
-    primary: $primary-palette,
-    accent: $accent-palette,
-    warn: $warn-palette,
-  ),
-  typography: mat.define-typography-config(),
-  density: 0,
-));
-
-// Include theme
-@include mat.all-component-themes($theme);
-
 // Global styles
 * {
   box-sizing: border-box;

@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
     <app-layout>
       <div class="dashboard-container">
         <div class="welcome-section">
-          <h1>¡Bienvenido, {{ user()?.name?.split(' ')[0] }}!</h1>
+          <h1>¡Bienvenido{{ user()?.name ? ', ' + user()!.name.split(' ')[0] : '' }}!</h1>
           <p class="welcome-subtitle">
             Aquí tienes un resumen de tus finanzas
           </p>

@@ -4,7 +4,7 @@ Firestore client implementation with connection pooling and error handling.
 import json
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar, Tuple
 from uuid import UUID
 
 import structlog
@@ -377,7 +377,7 @@ class FirestoreService:
     async def batch_create(
         self,
         collection: str,
-        documents: List[tuple[str, BaseModel]]
+        documents: List[Tuple[str, BaseModel]]
     ) -> List[str]:
         """Create multiple documents in a batch."""
         try:
@@ -415,7 +415,7 @@ class FirestoreService:
     
     async def transaction_update(
         self,
-        updates: List[tuple[str, str, BaseModel]]  # collection, doc_id, data
+        updates: List[Tuple[str, str, BaseModel]]  # collection, doc_id, data
     ) -> None:
         """Update multiple documents in a transaction."""
         try:

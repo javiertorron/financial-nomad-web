@@ -32,8 +32,7 @@ structlog==23.2.0
 # Rate limiting
 slowapi==0.1.9
 
-# CORS and middleware
-python-cors==1.7.0
+# CORS and middleware (included in FastAPI)
 
 # Development dependencies (will be separated later)
 pytest==7.4.3

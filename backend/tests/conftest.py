@@ -6,7 +6,6 @@ import os
 import asyncio
 from typing import AsyncGenerator, Generator
 from unittest.mock import patch, MagicMock
-import pytest.mock
 
 import pytest
 from fastapi.testclient import TestClient

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Frontend Angular con hot reload
   frontend:
@@ -17,7 +15,7 @@ services:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
       - API_URL=http://localhost:8080/api/v1
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_ID=783748328773-l80u4vhcmh90oa5d1fhf0mfhrvhppfhe.apps.googleusercontent.com
     depends_on:
       - backend
     networks:
@@ -44,9 +42,9 @@ services:
       - ENVIRONMENT=development
       - USE_FIRESTORE_EMULATOR=true
       - FIRESTORE_EMULATOR_HOST=firestore-emulator:8081
-      - FIRESTORE_PROJECT_ID=financial-nomad-dev
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-not-for-production}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - FIRESTORE_PROJECT_ID=financialnomadweb
+      - SECRET_KEY=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
+      - GOOGLE_CLIENT_ID=783748328773-l80u4vhcmh90oa5d1fhf0mfhrvhppfhe.apps.googleusercontent.com
       - CORS_ORIGINS=["http://localhost:4200", "http://localhost:80"]
       - LOG_LEVEL=DEBUG
       - RATE_LIMIT_PER_MINUTE=1000
@@ -69,7 +67,7 @@ services:
 
   # Firestore Emulator
   firestore-emulator:
-    image: gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+    image: google/cloud-sdk:emulators
     container_name: financial-nomad-firestore-dev
     ports:
       - "8081:8081"  # Firestore emulator
@@ -77,10 +75,7 @@ services:
     command: >
       sh -c "
         gcloud config set project financial-nomad-dev &&
-        gcloud emulators firestore start 
-          --project=financial-nomad-dev 
-          --host-port=0.0.0.0:8081 
-          --rules=/firestore/firestore.rules
+        gcloud emulators firestore start --project=financial-nomad-dev --host-port=0.0.0.0:8081 --rules=/firestore/firestore.rules
       "
     volumes:
       - ../firebase/firestore.rules:/firestore/firestore.rules:ro

@@ -70,7 +70,7 @@ wait_for_service() {
 log "Configurando entorno de testing..."
 
 # Parar servicios de desarrollo si están ejecutándose
-if docker-compose -f devops/docker-compose/docker-compose.dev.yml ps -q | grep -q .; then
+if docker compose -f devops/docker compose/docker compose.dev.yml ps -q | grep -q .; then
     warning "Parando servicios de desarrollo..."
     ./devops/scripts/dev-stop.sh
 fi

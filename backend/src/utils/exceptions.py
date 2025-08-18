@@ -45,11 +45,12 @@ class AuthenticationError(AppException):
     def __init__(
         self,
         message: str = "Authentication failed",
+        code: str = "AUTHENTICATION_ERROR",
         details: Optional[List[str]] = None
     ):
         super().__init__(
             message=message,
-            code="AUTHENTICATION_ERROR",
+            code=code,
             status_code=401,
             details=details
         )

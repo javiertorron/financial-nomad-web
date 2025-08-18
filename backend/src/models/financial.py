@@ -52,13 +52,13 @@ class Account(UserOwnedModel):
     
     name: str = Field(..., min_length=1, max_length=100)
     account_type: AccountType
-    balance: Decimal = Field(default=Decimal("0.00"), decimal_places=2)
+    balance: Decimal = Field(default=Decimal("0.00"))
     currency: str = Field(default="EUR", min_length=3, max_length=3)
     description: Optional[str] = Field(None, max_length=500)
     is_active: bool = Field(default=True)
     
     # Display settings
-    color: Optional[str] = Field(None, regex=r"^#[0-9A-Fa-f]{6}$")
+    color: Optional[str] = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
     icon: Optional[str] = Field(None, max_length=50)
     
     @validator("currency")
@@ -84,11 +84,11 @@ class Category(UserOwnedModel):
     is_active: bool = Field(default=True)
     
     # Display settings
-    color: Optional[str] = Field(None, regex=r"^#[0-9A-Fa-f]{6}$")
+    color: Optional[str] = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
     icon: Optional[str] = Field(None, max_length=50)
     
     # Budget settings
-    monthly_budget: Optional[Decimal] = Field(None, decimal_places=2, gt=0)
+    monthly_budget: Optional[Decimal] = Field(None, gt=0)
     
     @validator("monthly_budget")
     def validate_monthly_budget(cls, v):
@@ -102,7 +102,7 @@ class Transaction(UserOwnedModel):
     """Financial transaction model."""
     
     # Basic transaction data
-    amount: Decimal = Field(..., decimal_places=2)
+    amount: Decimal = Field(...)
     description: str = Field(..., min_length=1, max_length=200)
     transaction_type: TransactionType
     transaction_date: datetime
@@ -151,7 +151,7 @@ class RecurringTransaction(UserOwnedModel):
     
     # Template data
     name: str = Field(..., min_length=1, max_length=100)
-    amount: Decimal = Field(..., decimal_places=2)
+    amount: Decimal = Field(...)
     description: str = Field(..., min_length=1, max_length=200)
     transaction_type: TransactionType
     
@@ -197,12 +197,12 @@ class Budget(UserOwnedModel):
     
     name: str = Field(..., min_length=1, max_length=100)
     category_id: UUID
-    amount: Decimal = Field(..., decimal_places=2, gt=0)
+    amount: Decimal = Field(..., gt=0)
     period_start: datetime
     period_end: datetime
     
     # Status tracking
-    spent_amount: Decimal = Field(default=Decimal("0.00"), decimal_places=2)
+    spent_amount: Decimal = Field(default=Decimal("0.00"))
     is_active: bool = Field(default=True)
     
     # Alerts
