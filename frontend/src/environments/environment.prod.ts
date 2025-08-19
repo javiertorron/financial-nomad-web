@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   apiUrl: '/api/v1',
-  googleClientId: '783748328773-l80u4vhcmh90oa5d1fhf0mfhrvhppfhe.apps.googleusercontent.com', // Se configura en build time
+  googleClientId: '811175185894-gtq53kgq436fup4s2hvpo47prpvum17v.apps.googleusercontent.com', // Se configura en build time
   firebaseConfig: {
     projectId: 'financial-nomad-prod',
     useEmulator: false,

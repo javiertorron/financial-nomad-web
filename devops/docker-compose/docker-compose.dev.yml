@@ -11,11 +11,13 @@ services:
       - ../../frontend:/app
       - /app/node_modules
       - frontend-cache:/app/.angular
+    env_file:
+      - ../../.env
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - CHOKIDAR_USEPOLLING=true
-      - API_URL=http://localhost:8080/api/v1
-      - GOOGLE_CLIENT_ID=783748328773-l80u4vhcmh90oa5d1fhf0mfhrvhppfhe.apps.googleusercontent.com
+      - API_URL=${API_URL:-http://localhost:8080/api/v1}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     depends_on:
       - backend
     networks:
@@ -37,17 +39,19 @@ services:
     volumes:
       - ../../backend:/app
       - backend-cache:/app/.pytest_cache
+    env_file:
+      - ../../.env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - USE_FIRESTORE_EMULATOR=true
-      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8081
-      - FIRESTORE_PROJECT_ID=financialnomadweb
-      - SECRET_KEY=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
-      - GOOGLE_CLIENT_ID=783748328773-l80u4vhcmh90oa5d1fhf0mfhrvhppfhe.apps.googleusercontent.com
-      - CORS_ORIGINS=["http://localhost:4200", "http://localhost:80"]
-      - LOG_LEVEL=DEBUG
-      - RATE_LIMIT_PER_MINUTE=1000
+      - DEBUG=${DEBUG:-true}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - USE_FIRESTORE_EMULATOR=${USE_FIRESTORE_EMULATOR:-true}
+      - FIRESTORE_EMULATOR_HOST=${FIRESTORE_EMULATOR_HOST:-firestore-emulator:8081}
+      - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID}
+      - SECRET_KEY=${SECRET_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-1000}
     depends_on:
       firestore-emulator:
         condition: service_healthy

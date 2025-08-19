@@ -32,7 +32,7 @@ export class ConfigService {
 
   // Configuración por defecto para fallback
   private readonly defaultConfig: AppConfig = {
-    googleClientId: '783748328773-l80u4vhcmh90oa5d1fhf0mfhrvhppfhe.apps.googleusercontent.com',
+    googleClientId: '811175185894-gtq53kgq436fup4s2hvpo47prpvum17v.apps.googleusercontent.com',
     apiUrl: 'http://localhost:8080/api/v1',
     environment: 'development',
     version: '1.0.0',
