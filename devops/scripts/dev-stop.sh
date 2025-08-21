@@ -33,12 +33,12 @@ cd "$PROJECT_ROOT"
 log "Parando servicios de desarrollo..."
 
 # Parar todos los servicios
-docker-compose -f devops/docker-compose/docker-compose.dev.yml down
+docker compose -f devops/docker compose/docker compose.dev.yml down
 
 # Limpiar volúmenes si se solicita
 if [ "$1" = "--clean" ]; then
     log "Limpiando volúmenes..."
-    docker-compose -f devops/docker-compose/docker-compose.dev.yml down -v
+    docker compose -f devops/docker compose/docker compose.dev.yml down -v
     docker system prune -f
     success "✓ Volúmenes limpiados"
 fi

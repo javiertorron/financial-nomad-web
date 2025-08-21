@@ -68,14 +68,14 @@ mkdir -p test-results/backend
 # Ejecutar tests
 log "Iniciando servicios de testing..."
 
-if docker-compose -f devops/docker-compose/docker-compose.test.yml --profile test up -d firestore-emulator-test; then
+if docker compose -f devops/docker compose/docker compose.test.yml --profile test up -d firestore-emulator-test; then
     log "Esperando Firestore Emulator..."
     sleep 20
     
     # Ejecutar tests según el tipo
     if [ "$TEST_TYPE" = "all" ] || [ "$TEST_TYPE" = "unit" ]; then
         log "Ejecutando tests unitarios..."
-        if docker-compose -f devops/docker-compose/docker-compose.test.yml --profile unit-tests run --rm backend-unit-tests; then
+        if docker compose -f devops/docker compose/docker compose.test.yml --profile unit-tests run --rm backend-unit-tests; then
             success "✓ Tests unitarios pasaron"
             unit_result=0
         else
@@ -90,7 +90,7 @@ if docker-compose -f devops/docker-compose/docker-compose.test.yml --profile tes
     
     if [ "$TEST_TYPE" = "all" ] || [ "$TEST_TYPE" = "integration" ]; then
         log "Ejecutando tests de integración..."
-        if docker-compose -f devops/docker-compose/docker-compose.test.yml --profile integration-tests run --rm backend-integration-tests; then
+        if docker compose -f devops/docker compose/docker compose.test.yml --profile integration-tests run --rm backend-integration-tests; then
             success "✓ Tests de integración pasaron"
             integration_result=0
         else
@@ -105,7 +105,7 @@ if docker-compose -f devops/docker-compose/docker-compose.test.yml --profile tes
     
     # Limpiar servicios
     log "Limpiando servicios de testing..."
-    docker-compose -f devops/docker-compose/docker-compose.test.yml --profile test down
+    docker compose -f devops/docker compose/docker compose.test.yml --profile test down
     
     # Mostrar resultados
     echo ""

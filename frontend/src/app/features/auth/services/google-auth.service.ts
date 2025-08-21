@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, fromEvent, map, take } from 'rxjs';
 
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/services/config.service';
 import { GoogleUser } from '../../../core/types/auth.types';
 
 declare global {
@@ -15,6 +15,7 @@ declare global {
   providedIn: 'root'
 })
 export class GoogleAuthService {
+  private readonly configService = inject(ConfigService);
   private isInitialized = false;
   private auth2: any;
 
@@ -27,14 +28,18 @@ export class GoogleAuthService {
       // Cargar Google Identity Services
       await this.loadGoogleScript();
       
+      // Obtener client ID del servicio de configuración
+      const googleClientId = this.configService.getGoogleClientId();
+      
       // Inicializar con el client ID
-      if (window.google && environment.googleClientId) {
+      if (window.google && googleClientId) {
         window.google.accounts.id.initialize({
-          client_id: environment.googleClientId,
+          client_id: googleClientId,
           callback: () => {} // Se manejará en el componente
         });
         
         this.isInitialized = true;
+        console.log('Google Auth initialized with Client ID:', googleClientId);
       } else {
         throw new Error('Google Auth no está disponible o Client ID no configurado');
       }
@@ -103,7 +108,7 @@ export class GoogleAuthService {
       const originalCallback = window.google.accounts.id.callback;
       
       window.google.accounts.id.initialize({
-        client_id: environment.googleClientId,
+        client_id: this.configService.getGoogleClientId(),
         callback: (response: any) => {
           // Restaurar callback original
           window.google.accounts.id.callback = originalCallback;
@@ -138,7 +143,7 @@ export class GoogleAuthService {
       const originalCallback = window.google.accounts.id.callback;
       
       window.google.accounts.id.initialize({
-        client_id: environment.googleClientId,
+        client_id: this.configService.getGoogleClientId(),
         callback: (response: any) => {
           window.google.accounts.id.callback = originalCallback;
           document.body.removeChild(tempDiv);
@@ -179,6 +184,6 @@ export class GoogleAuthService {
   }
 
   isAvailable(): boolean {
-    return this.isInitialized && !!window.google && !!environment.googleClientId;
+    return this.isInitialized && !!window.google && !!this.configService.getGoogleClientId();
   }
 }

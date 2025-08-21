@@ -44,8 +44,8 @@ pre-commit install
 
 # Check if Docker is available
 if command -v docker &> /dev/null; then
-    echo "🐳 Docker found - you can use docker-compose for development"
-    echo "   Run: docker-compose up -d"
+    echo "🐳 Docker found - you can use docker compose for development"
+    echo "   Run: docker compose up -d"
 else
     echo "⚠️  Docker not found - install Docker for easier development"
 fi
@@ -65,7 +65,7 @@ echo "🏃 Quick start:"
 echo "   1. Activate virtual environment: source venv/bin/activate"
 echo "   2. Edit .env file with your configuration"
 echo "   3. Start development server: uvicorn src.main:app --reload"
-echo "   4. Or use Docker: docker-compose up"
+echo "   4. Or use Docker: docker compose up"
 echo ""
 echo "🧪 Run tests: ./scripts/run_tests.sh"
 echo "📖 API docs: http://localhost:8080/docs"

@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        case_sensitive=True,
+        case_sensitive=False,
         extra="ignore"
     )
     
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     
     # API
     api_prefix: str = Field(default="/api/v1", description="API path prefix")
-    cors_origins: List[str] = Field(default=[], description="CORS allowed origins")
+    cors_origins: str = Field(default="", description="CORS allowed origins (comma-separated)")
     rate_limit_per_minute: int = Field(default=100, ge=1, description="Rate limit per minute")
     
     # External APIs
@@ -56,20 +56,11 @@ class Settings(BaseSettings):
     port: int = Field(default=8080, ge=1, le=65535, description="Server port")
     workers: int = Field(default=1, ge=1, description="Number of worker processes")
     
-    @validator("cors_origins", pre=True)
-    def parse_cors_origins(cls, v):
-        """Parse CORS origins from string or list."""
-        if isinstance(v, str):
-            # Handle string format like "['http://localhost:3000', 'http://localhost:4200']"
-            if v.startswith("[") and v.endswith("]"):
-                import ast
-                try:
-                    return ast.literal_eval(v)
-                except (ValueError, SyntaxError):
-                    return []
-            # Handle comma-separated string
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v or []
+    def get_cors_origins_list(self) -> List[str]:
+        """Get CORS origins as a list."""
+        if not self.cors_origins:
+            return []
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
     
     @validator("log_level")
     def validate_log_level(cls, v):

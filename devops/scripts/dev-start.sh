@@ -43,7 +43,7 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
     error "Docker Compose no está instalado. Por favor instala Docker Compose primero."
     exit 1
 fi
@@ -133,12 +133,12 @@ fi
 
 # Limpiar contenedores anteriores si existen
 log "Limpiando contenedores anteriores..."
-docker-compose -f devops/docker-compose/docker-compose.dev.yml down --remove-orphans 2>/dev/null || true
+docker compose -f devops/docker compose/docker compose.dev.yml down --remove-orphans 2>/dev/null || true
 
 # Limpiar volúmenes si se solicita
 if [ "$1" = "--clean" ]; then
     log "Limpiando volúmenes..."
-    docker-compose -f devops/docker-compose/docker-compose.dev.yml down -v 2>/dev/null || true
+    docker compose -f devops/docker compose/docker compose.dev.yml down -v 2>/dev/null || true
     docker system prune -f
 fi
 
@@ -151,12 +151,12 @@ mkdir -p backend/.pytest_cache
 # Construcción e inicio de servicios
 log "Construyendo e iniciando servicios..."
 
-# Exportar variables de entorno para docker-compose
+# Exportar variables de entorno para docker compose
 export $(cat .env | grep -v ^# | xargs)
 
 # Iniciar servicios en orden
 log "Iniciando Firestore Emulator..."
-docker-compose -f devops/docker-compose/docker-compose.dev.yml up -d firestore-emulator
+docker compose -f devops/docker compose/docker compose.dev.yml up -d firestore-emulator
 
 # Esperar a que Firestore esté listo
 log "Esperando Firestore Emulator..."
@@ -165,7 +165,7 @@ counter=0
 while ! curl -s http://localhost:8081 > /dev/null 2>&1; do
     if [ $counter -eq $timeout ]; then
         error "Timeout esperando Firestore Emulator"
-        docker-compose -f devops/docker-compose/docker-compose.dev.yml logs firestore-emulator
+        docker compose -f devops/docker compose/docker compose.dev.yml logs firestore-emulator
         exit 1
     fi
     sleep 2
@@ -177,7 +177,7 @@ success "✓ Firestore Emulator está listo"
 
 # Iniciar backend
 log "Iniciando Backend..."
-docker-compose -f devops/docker-compose/docker-compose.dev.yml up -d backend
+docker compose -f devops/docker compose/docker compose.dev.yml up -d backend
 
 # Esperar a que backend esté listo
 log "Esperando Backend API..."
@@ -186,7 +186,7 @@ counter=0
 while ! curl -s http://localhost:8080/api/v1/health > /dev/null 2>&1; do
     if [ $counter -eq $timeout ]; then
         error "Timeout esperando Backend API"
-        docker-compose -f devops/docker-compose/docker-compose.dev.yml logs backend
+        docker compose -f devops/docker compose/docker compose.dev.yml logs backend
         exit 1
     fi
     sleep 2
@@ -198,7 +198,7 @@ success "✓ Backend API está listo"
 
 # Iniciar frontend
 log "Iniciando Frontend..."
-docker-compose -f devops/docker-compose/docker-compose.dev.yml up -d frontend
+docker compose -f devops/docker compose/docker compose.dev.yml up -d frontend
 
 # Esperar a que frontend esté listo
 log "Esperando Frontend..."
@@ -207,7 +207,7 @@ counter=0
 while ! curl -s http://localhost:4200 > /dev/null 2>&1; do
     if [ $counter -eq $timeout ]; then
         error "Timeout esperando Frontend"
-        docker-compose -f devops/docker-compose/docker-compose.dev.yml logs frontend
+        docker compose -f devops/docker compose/docker compose.dev.yml logs frontend
         exit 1
     fi
     sleep 3
@@ -219,11 +219,11 @@ success "✓ Frontend está listo"
 
 # Iniciar servicios adicionales
 log "Iniciando servicios adicionales..."
-docker-compose -f devops/docker-compose/docker-compose.dev.yml up -d redis mailhog
+docker compose -f devops/docker compose/docker compose.dev.yml up -d redis mailhog
 
 # Iniciar Nginx
 log "Iniciando Nginx..."
-docker-compose -f devops/docker-compose/docker-compose.dev.yml up -d nginx
+docker compose -f devops/docker compose/docker compose.dev.yml up -d nginx
 
 # Verificar estado de todos los servicios
 log "Verificando estado de servicios..."
@@ -278,6 +278,6 @@ else
     error "❌ Algunos servicios no están funcionando correctamente"
     echo ""
     echo "Para ver logs detallados:"
-    echo "  docker-compose -f devops/docker-compose/docker-compose.dev.yml logs"
+    echo "  docker compose -f devops/docker compose/docker compose.dev.yml logs"
     exit 1
 fi

@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 
 import { AuthService } from '../../../../core/services/auth.service';
+import { ConfigService } from '../../../../core/services/config.service';
 import { GoogleAuthService } from '../../services/google-auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { environment } from '../../../../../environments/environment';
@@ -220,6 +221,7 @@ import { environment } from '../../../../../environments/environment';
 })
 export class LoginComponent implements OnInit {
   private readonly authService = inject(AuthService);
+  private readonly configService = inject(ConfigService);
   private readonly googleAuthService = inject(GoogleAuthService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
@@ -238,12 +240,26 @@ export class LoginComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    // Primero cargar configuración del servidor
+    await this.loadConfiguration();
+    // Luego inicializar Google Auth
     await this.initializeGoogleAuth();
+  }
+
+  private async loadConfiguration(): Promise<void> {
+    try {
+      // Cargar configuración del backend
+      await this.configService.loadConfig().toPromise();
+      console.log('Configuración cargada:', this.configService.config());
+    } catch (error) {
+      console.warn('No se pudo cargar configuración del servidor, usando valores por defecto:', error);
+    }
   }
 
   private async initializeGoogleAuth(): Promise<void> {
     try {
-      if (!environment.googleClientId) {
+      const googleClientId = this.configService.getGoogleClientId();
+      if (!googleClientId) {
         console.warn('Google Client ID no configurado');
         return;
       }

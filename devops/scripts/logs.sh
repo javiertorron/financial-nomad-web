@@ -42,13 +42,13 @@ if [ -z "$SERVICE" ]; then
     
     # Mostrar logs de todos los servicios
     echo "Mostrando logs de todos los servicios (presiona Ctrl+C para salir):"
-    docker-compose -f devops/docker-compose/docker-compose.dev.yml logs --follow --tail=100
+    docker compose -f devops/docker compose/docker compose.dev.yml logs --follow --tail=100
 else
-    # Convertir --no-follow a parámetros de docker-compose
+    # Convertir --no-follow a parámetros de docker compose
     if [ "$FOLLOW" = "--no-follow" ]; then
-        docker-compose -f devops/docker-compose/docker-compose.dev.yml logs --tail=100 "$SERVICE"
+        docker compose -f devops/docker compose/docker compose.dev.yml logs --tail=100 "$SERVICE"
     else
         echo "Mostrando logs de $SERVICE (presiona Ctrl+C para salir):"
-        docker-compose -f devops/docker-compose/docker-compose.dev.yml logs --follow --tail=100 "$SERVICE"
+        docker compose -f devops/docker compose/docker compose.dev.yml logs --follow --tail=100 "$SERVICE"
     fi
 fi

@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 from .base import IdentifiedModel
 
@@ -56,12 +56,10 @@ class User(IdentifiedModel):
     asana_refresh_token: Optional[str] = Field(None, description="Encrypted Asana refresh token")
     asana_workspace_id: Optional[str] = Field(None, description="Selected Asana workspace")
     
-    class Config:
-        # Exclude sensitive fields from serialization by default
-        fields = {
-            "asana_access_token": {"write_only": True},
-            "asana_refresh_token": {"write_only": True},
-        }
+    model_config = ConfigDict(
+        # For Pydantic v2, use model_config instead of Config class
+        extra="forbid"
+    )
 
 
 class Invitation(IdentifiedModel):
@@ -161,3 +159,7 @@ class InvitationResponse(BaseModel):
     invitation_code: str
     expires_at: datetime
     invited_by_name: str
+
+
+# Update forward references for Pydantic v2
+LoginResponse.model_rebuild()

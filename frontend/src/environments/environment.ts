@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:8080/api/v1',
-  googleClientId: '783748328773-l80u4vhcmh90oa5d1fhf0mfhrvhppfhe.apps.googleusercontent.com', // Placeholder para desarrollo
+  googleClientId: '811175185894-gtq53kgq436fup4s2hvpo47prpvum17v.apps.googleusercontent.com', // Placeholder para desarrollo
   firebaseConfig: {
     projectId: 'financial-nomad-dev',
     useEmulator: true,

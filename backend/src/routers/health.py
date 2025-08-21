@@ -81,3 +81,20 @@ async def liveness_check() -> Dict[str, str]:
     """Liveness probe for Kubernetes."""
     # Basic check that the application is responsive
     return {"status": "alive"}
+
+
+@router.get("/config", status_code=status.HTTP_200_OK)
+async def get_config() -> Dict[str, Any]:
+    """Get public configuration for frontend."""
+    return {
+        "googleClientId": settings.google_client_id,
+        "apiUrl": f"/api/v1",
+        "environment": settings.environment,
+        "version": settings.version,
+        "features": {
+            "enableAsanaIntegration": True,
+            "enableExportFeatures": True,
+            "enablePwaFeatures": True,
+            "enableOfflineMode": False
+        }
+    }

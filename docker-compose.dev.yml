@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # Firestore Emulator
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+    container_name: financial-nomad-firestore
+    ports:
+      - "8081:8081"
+      - "4000:4000"
+    command: >
+      sh -c "
+        gcloud config set project financial-nomad-dev &&
+        gcloud emulators firestore start 
+          --project=financial-nomad-dev 
+          --host-port=0.0.0.0:8081 
+          --rules=/firestore/firestore.rules
+      "
+    volumes:
+      - ./devops/firebase/firestore.rules:/firestore/firestore.rules:ro
+    environment:
+      - FIRESTORE_PROJECT_ID=financial-nomad-dev
+      - GCLOUD_PROJECT=financial-nomad-dev
+    networks:
+      - financial-nomad-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../devops/docker/backend/Dockerfile.dev
+    container_name: financial-nomad-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - USE_FIRESTORE_EMULATOR=true
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8081
+      - FIRESTORE_PROJECT_ID=financial-nomad-dev
+      - SECRET_KEY=dev-secret-key-not-for-production
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - LOG_LEVEL=DEBUG
+      - RATE_LIMIT_PER_MINUTE=1000
+    volumes:
+      - ./backend:/app
+      - backend-cache:/app/.pytest_cache
+    depends_on:
+      firestore-emulator:
+        condition: service_healthy
+    networks:
+      - financial-nomad-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../devops/docker/frontend/Dockerfile.dev
+    container_name: financial-nomad-frontend
+    ports:
+      - "4200:4200"
+    environment:
+      - NODE_ENV=development
+      - API_URL=http://backend:8080/api/v1
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - frontend-cache:/app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - financial-nomad-network
+
+  # Redis para cache
+  redis:
+    image: redis:7-alpine
+    container_name: financial-nomad-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - financial-nomad-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # MailHog para desarrollo
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: financial-nomad-mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - financial-nomad-network
+
+volumes:
+  backend-cache:
+    driver: local
+  frontend-cache:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  financial-nomad-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

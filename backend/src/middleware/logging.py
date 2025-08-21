@@ -6,18 +6,16 @@ import time
 from typing import Callable
 
 from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 import structlog
 
 logger = structlog.get_logger()
 
 
-class LoggingMiddleware:
+class LoggingMiddleware(BaseHTTPMiddleware):
     """Middleware to log HTTP requests and responses."""
     
-    def __init__(self, app: Callable):
-        self.app = app
-    
-    async def __call__(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Log request and response information."""
         start_time = time.time()
         

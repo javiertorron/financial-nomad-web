@@ -3,7 +3,7 @@ Authentication service with Google OAuth integration and JWT handling.
 """
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Tuple
 from uuid import uuid4
 
 import jwt
@@ -261,7 +261,7 @@ class AuthService:
                 details=[str(e)]
             )
     
-    async def verify_jwt_token(self, token: str) -> tuple[User, Session]:
+    async def verify_jwt_token(self, token: str) -> Tuple[User, Session]:
         """Verify JWT token and return user and session."""
         try:
             payload = jwt.decode(
