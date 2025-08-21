@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -18,6 +18,7 @@ import { environment } from '../../../../../environments/environment';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     MatCardModule,
     MatButtonModule,
     MatProgressSpinnerModule,
@@ -73,6 +74,15 @@ import { environment } from '../../../../../environments/environment';
                   <li>Generar reportes detallados</li>
                   <li>Exportar datos a diferentes formatos</li>
                 </ul>
+              </div>
+
+              <div class="legal-links">
+                <p>Al continuar, aceptas nuestros</p>
+                <div class="links">
+                  <a routerLink="/legal/terms-of-service" target="_blank">Términos de Servicio</a>
+                  <span>y</span>
+                  <a routerLink="/legal/privacy-policy" target="_blank">Política de Privacidad</a>
+                </div>
               </div>
             </div>
           }
@@ -204,6 +214,34 @@ import { environment } from '../../../../../environments/environment';
 
     .app-info li {
       margin-bottom: 8px;
+    }
+
+    .legal-links {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .legal-links p {
+      margin: 0 0 8px;
+    }
+
+    .legal-links .links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .legal-links a {
+      color: #1976d2;
+      text-decoration: none;
+    }
+
+    .legal-links a:hover {
+      text-decoration: underline;
     }
 
     .dev-info {
