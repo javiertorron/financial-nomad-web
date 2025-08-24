@@ -139,20 +139,25 @@ export class PWAService {
       this.updateState({ serviceWorkerActive: true });
       
       // Check for available updates
-      this.swUpdate.available.subscribe(() => {
-        this.updateState({ updateAvailable: true });
-        this.notification.showInfo('New version available. Click to update.', {
-          action: 'Update',
-          duration: 0
-        }).onAction().subscribe(() => {
-          this.updateApp();
-        });
+      this.swUpdate.versionUpdates.subscribe(evt => {
+        if (evt.type === 'VERSION_READY') {
+          this.updateState({ updateAvailable: true });
+          const snackBarRef = this.notification.showInfo('New version available. Click to update.', {
+            action: 'Update',
+            duration: 0
+          });
+          snackBarRef.onAction().subscribe(() => {
+            this.updateApp();
+          });
+        }
       });
 
       // Handle activation of new version
-      this.swUpdate.activated.subscribe(() => {
-        this.notification.showSuccess('App updated to latest version!');
-        this.updateState({ updateAvailable: false });
+      this.swUpdate.versionUpdates.subscribe(evt => {
+        if (evt.type === 'VERSION_INSTALLED') {
+          this.notification.showSuccess('App updated to latest version!');
+          this.updateState({ updateAvailable: false });
+        }
       });
     }
   }

@@ -685,12 +685,12 @@ export class SystemConfigComponent implements OnInit, OnDestroy {
   hasChanges = false;
   
   // Form groups for different configuration sections
-  appForm: FormGroup;
-  securityForm: FormGroup;
-  databaseForm: FormGroup;
-  apiForm: FormGroup;
-  storageForm: FormGroup;
-  featuresForm: FormGroup;
+  appForm!: FormGroup;
+  securityForm!: FormGroup;
+  databaseForm!: FormGroup;
+  apiForm!: FormGroup;
+  storageForm!: FormGroup;
+  featuresForm!: FormGroup;
   
   // Current system configuration
   currentConfig: SystemConfiguration | null = null;
