@@ -1,0 +1,14 @@
+# Terraform variables for Financial Nomad API deployment
+# Copy this file to terraform.tfvars and update with your values
+
+# Google Cloud Project ID (required)
+project_id = "your-gcp-project-id"
+
+# Deployment region (optional - defaults to us-central1)
+region = "us-central1"
+
+# Deployment zone (optional - defaults to us-central1-a)
+zone = "us-central1-a"
+
+# Service name (optional - defaults to financial-nomad-api)
+service_name = "financial-nomad-api"

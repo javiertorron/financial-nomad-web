@@ -1,24 +1,26 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of, EMPTY } from 'rxjs';
 import { map, tap, catchError, switchMap } from 'rxjs/operators';
 
-import { HttpService } from './http.service';
 import { environment } from '../../../environments/environment';
 import { 
   User, 
   LoginRequest, 
   LoginResponse, 
-  TokenInfo, 
-  GoogleUser 
+  RegisterRequest,
+  RegisterResponse,
+  TokenInfo
 } from '../types/auth.types';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly http = inject(HttpService);
+  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly baseUrl = environment.apiUrl;
 
   // Signals para estado reactivo
   private readonly _user = signal<User | null>(null);
@@ -56,19 +58,36 @@ export class AuthService {
     }
   }
 
-  loginWithGoogle(googleToken: string): Observable<LoginResponse> {
+  register(email: string, password: string, name: string, invitationCode: string): Observable<RegisterResponse> {
     this._isLoading.set(true);
     this._error.set(null);
 
-    const loginRequest: LoginRequest = { google_token: googleToken };
+    const registerRequest: RegisterRequest = { 
+      email, 
+      password, 
+      name, 
+      invitation_code: invitationCode 
+    };
 
-    return this.http.post<LoginResponse>('/auth/login', loginRequest).pipe(
-      map(response => {
-        if (response.status === 'success' && response.data) {
-          return response.data;
-        }
-        throw new Error(response.message || 'Error en el login');
+    return this.http.post<RegisterResponse>(`${this.baseUrl}/auth/register`, registerRequest).pipe(
+      tap(() => {
+        this._isLoading.set(false);
       }),
+      catchError(error => {
+        this._error.set(error.message || 'Error en el registro');
+        this._isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  login(email: string, password: string): Observable<LoginResponse> {
+    this._isLoading.set(true);
+    this._error.set(null);
+
+    const loginRequest: LoginRequest = { email, password };
+
+    return this.http.post<LoginResponse>(`${this.baseUrl}/auth/login`, loginRequest).pipe(
       tap(loginResponse => {
         this.setAuthData(loginResponse);
         this._user.set(loginResponse.user);
@@ -83,44 +102,34 @@ export class AuthService {
   }
 
   logout(): void {
-    this.clearAuthData();
-    this._user.set(null);
-    this._error.set(null);
-    this.router.navigate(['/auth/login']);
-  }
-
-  refreshToken(): Observable<LoginResponse> {
+    // Llamar al endpoint de logout en el backend
     const token = this.getStoredToken();
-    if (!token) {
-      return throwError(() => new Error('No token available'));
-    }
-
-    return this.http.post<LoginResponse>('/auth/refresh', {}).pipe(
-      map(response => {
-        if (response.status === 'success' && response.data) {
-          return response.data;
+    if (token) {
+      this.http.post(`${this.baseUrl}/auth/logout`, {}).subscribe({
+        complete: () => {
+          this.clearAuthData();
+          this._user.set(null);
+          this._error.set(null);
+          this.router.navigate(['/auth/login']);
+        },
+        error: () => {
+          // Incluso si el logout falla en el backend, limpiar el frontend
+          this.clearAuthData();
+          this._user.set(null);
+          this._error.set(null);
+          this.router.navigate(['/auth/login']);
         }
-        throw new Error(response.message || 'Error refreshing token');
-      }),
-      tap(loginResponse => {
-        this.setAuthData(loginResponse);
-        this._user.set(loginResponse.user);
-      }),
-      catchError(error => {
-        this.logout();
-        return throwError(() => error);
-      })
-    );
+      });
+    } else {
+      this.clearAuthData();
+      this._user.set(null);
+      this._error.set(null);
+      this.router.navigate(['/auth/login']);
+    }
   }
 
   private validateToken(): Observable<User> {
-    return this.http.get<User>('/auth/me').pipe(
-      map(response => {
-        if (response.status === 'success' && response.data) {
-          return response.data;
-        }
-        throw new Error('Invalid token');
-      }),
+    return this.http.get<any>(`${this.baseUrl}/auth/verify`).pipe(
       catchError(() => throwError(() => new Error('Token validation failed')))
     );
   }
@@ -196,5 +205,10 @@ export class AuthService {
     }
     
     return true;
+  }
+
+  // Método para inicializar el usuario maestro (solo para desarrollo)
+  initMasterUser(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/init-master`, {});
   }
 }

@@ -6,7 +6,7 @@ services:
       dockerfile: ../devops/docker/frontend/Dockerfile.dev
     container_name: financial-nomad-frontend-dev
     ports:
-      - "4200:4200"
+      - "0.0.0.0:4200:4200"
     volumes:
       - ../../frontend:/app
       - /app/node_modules
@@ -102,7 +102,7 @@ services:
     image: nginx:alpine
     container_name: financial-nomad-nginx-dev
     ports:
-      - "80:80"
+      - "0.0.0.0:80:80"
     volumes:
       - ../nginx/dev.conf:/etc/nginx/nginx.conf:ro
       - nginx-logs:/var/log/nginx

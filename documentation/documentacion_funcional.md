@@ -34,12 +34,12 @@
   - Orquestación: Cloud Scheduler + Cloud Functions/Run para jobs (backups/Drive, sync Asana).  
   - Secret Manager + KMS para credenciales.  
 - **Integraciones**  
-  - **OAuth Google** (Identity/Firebase Auth) + registro **por invitación** (código firmado).  
+  - **Autenticación básica** (email/password con bcrypt) + registro **por invitación** (código firmado).  
   - **Asana API** (OAuth, webhooks) y SDK Python.  
   - **Drive API** para replicar backups de Firestore exportados a GCS.
 
 ### 2.2 Modelo de datos (Firestore)
-- `users/{uid}`: perfil, preferencias, flags (onboarding, consent).  
+- `users/{uid}`: email, password_hash, perfil, preferencias, flags (onboarding, consent), role (admin/user).  
 - `invites/{code}`: email, issuedBy, expiresAt, consumedBy.  
 - `accounts/{uid}/bank_accounts/{id}`  
 - `accounts/{uid}/categories/{id}`  
@@ -52,12 +52,14 @@
 
 ## 3. Identidad, acceso y registro por invitación
 
-- **Flujo de login:** Google OAuth → token de identidad → sesión del backend (cookie httpOnly + CSRF).  
+- **Flujo de registro:** Email/password + código de invitación → validar invitación → hash password (bcrypt) → crear usuario en Firestore.  
+- **Flujo de login:** Email/password → verificar hash → generar JWT → sesión del backend (cookie httpOnly + CSRF).  
 - **Flujo de invitación:**  
   1) Admin emite invitación (`invites/{code}`) con email y expiración.  
   2) Se envía email con link firmado (`?invite=CODE`).  
-  3) Usuario hace login con Google; el backend valida que el email coincide con la invitación y marca `consumedBy`.  
-- **Seguridad:** rotación de claves, rate limiting, bloqueo por intentos, auditoría de acceso, Data Loss Prevention para exportes.  
+  3) Usuario se registra con email/password; el backend valida que el email coincide con la invitación y marca `consumedBy`.  
+- **Usuario maestro:** `javier.torron.diaz@gmail.com` con rol admin, preconfigurado en el sistema.  
+- **Seguridad:** bcrypt para passwords, JWT con expiración, rate limiting, bloqueo por intentos, auditoría de acceso, Data Loss Prevention para exportes.  
 - **GDPR:** consentimiento, derecho de supresión (borrado de Firestore + señal a backups).
 
 ## 4. UX y especificación de pantallas (Web)
@@ -133,7 +135,7 @@ Se mantiene el **formato YAML de Android** para continuidad (gastos/ingresos, co
 
 ## 8. Seguridad y privacidad
 
-- **Auth**: OAuth Google; sesiones httpOnly + SameSite; revocación/rotación.  
+- **Auth**: Email/password con bcrypt; JWT + sesiones httpOnly + SameSite; revocación/rotación.  
 - **Firestore Rules**: acceso por `uid` y validación de invitación aceptada; validación de esquemas básicos.  
 - **Secret Manager**: tokens Asana/Drive cifrados; acceso por servicio mínimo necesario.  
 - **Backups**: exportes automáticos de Firestore a GCS; job de réplica a Google Drive (carpeta privada); retención 7/4/12 (días/semanas/meses).  
@@ -164,7 +166,8 @@ Se mantiene el **formato YAML de Android** para continuidad (gastos/ingresos, co
 ## 12. Roadmap (Web)
 
 ### MVP – Fase 1
-- Auth Google + **registro por invitación**.  
+- Auth básica email/password + **registro por invitación**.  
+- Usuario maestro preconfigurado.  
 - CRUD de transacciones, categorías, cuentas, presupuestos.  
 - Importación YAML y dashboard con métricas básicas.  
 - Reglas Firestore + tests + CI mínima.

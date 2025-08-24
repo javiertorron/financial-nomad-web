@@ -2,12 +2,13 @@
 Pydantic models for the Financial Nomad API.
 """
 from .auth import (
-    GoogleOAuthResponse,
     Invitation,
     InvitationRequest,
     InvitationResponse,
     LoginRequest,
     LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
     Session,
     User,
     UserPreferencesUpdate,
@@ -49,7 +50,8 @@ __all__ = [
     "Session",
     "LoginRequest",
     "LoginResponse",
-    "GoogleOAuthResponse",
+    "RegisterRequest",
+    "RegisterResponse",
     # Financial models
     "Account",
     "AccountType",

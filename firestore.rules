@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para usuarios
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Reglas para invitaciones (solo admins pueden gestionar)
+    match /invitations/{inviteId} {
+      allow read, write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Reglas para sesiones (solo el usuario propietario)
+    match /sessions/{sessionId} {
+      allow read, write: if request.auth != null && 
+        resource.data.user_id == request.auth.uid;
+    }
+    
+    // Reglas para datos financieros por usuario
+    match /accounts/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Reglas para integraciones por usuario
+    match /integrations/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Reglas para exportes por usuario
+    match /exports/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Denegar acceso por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

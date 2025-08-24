@@ -83,7 +83,8 @@
               "buildTarget": "financial-nomad-frontend:build:production"
             },
             "development": {
-              "buildTarget": "financial-nomad-frontend:build:development"
+              "buildTarget": "financial-nomad-frontend:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

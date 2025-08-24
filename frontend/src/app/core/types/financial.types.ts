@@ -1,41 +1,65 @@
-// Tipos para entidades financieras
+// Tipos para entidades financieras - alineados con la API backend
 export interface Account {
   id: string;
-  user_id: string;
   name: string;
-  type: AccountType;
+  account_type: AccountType;
+  balance: string; // Decimal como string desde la API
   currency: string;
-  balance: number;
-  initial_balance: number;
   description?: string;
   is_active: boolean;
+  color?: string;
+  icon?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface AccountSummary {
+  id: string;
+  name: string;
+  account_type: AccountType;
+  balance: string;
+  currency: string;
+  description?: string;
+  is_active: boolean;
+  color?: string;
+  icon?: string;
 }
 
 export enum AccountType {
   CHECKING = 'checking',
   SAVINGS = 'savings',
-  INVESTMENT = 'investment',
   CREDIT_CARD = 'credit_card',
-  LOAN = 'loan',
   CASH = 'cash',
+  INVESTMENT = 'investment',
+  LOAN = 'loan',
   OTHER = 'other'
 }
 
 export interface Category {
   id: string;
-  user_id: string;
   name: string;
-  type: CategoryType;
+  category_type: CategoryType;
   parent_id?: string;
-  color: string;
-  icon: string;
   description?: string;
   is_active: boolean;
+  color?: string;
+  icon?: string;
+  monthly_budget?: string;
+  is_system?: boolean;
   created_at: string;
   updated_at: string;
-  subcategories?: Category[];
+}
+
+export interface CategorySummary {
+  id: string;
+  name: string;
+  category_type: CategoryType;
+  parent_name?: string;
+  monthly_budget?: string;
+  is_active: boolean;
+  is_system?: boolean;
+  color?: string;
+  icon?: string;
 }
 
 export enum CategoryType {
@@ -46,27 +70,29 @@ export enum CategoryType {
 
 export interface Transaction {
   id: string;
-  user_id: string;
   account_id: string;
   category_id?: string;
-  amount: number;
-  type: TransactionType;
+  amount: string; // Decimal como string desde la API
   description: string;
-  date: string;
-  reference?: string;
+  transaction_date: string;
+  destination_account_id?: string;
+  reference_number?: string;
+  notes?: string;
   tags?: string[];
-  from_account_id?: string;
-  to_account_id?: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  account?: Account;
-  category?: Category;
 }
 
-export enum TransactionType {
-  INCOME = 'income',
-  EXPENSE = 'expense',
-  TRANSFER = 'transfer'
+export interface TransactionSummary {
+  id: string;
+  account_id: string;
+  category_id?: string;
+  amount: string;
+  description: string;
+  transaction_date: string;
+  destination_account_id?: string;
+  is_active: boolean;
 }
 
 export interface Budget {
@@ -93,62 +119,69 @@ export enum BudgetPeriod {
   YEARLY = 'yearly'
 }
 
-// DTOs para crear/actualizar entidades
-export interface CreateAccountDto {
+// DTOs para crear/actualizar entidades - alineados con la API backend
+export interface CreateAccountRequest {
   name: string;
-  type: AccountType;
-  currency: string;
-  initial_balance: number;
-  description?: string;
-}
-
-export interface UpdateAccountDto {
-  name?: string;
-  type?: AccountType;
+  account_type: AccountType;
+  balance?: string;
   currency?: string;
   description?: string;
-  is_active?: boolean;
-}
-
-export interface CreateCategoryDto {
-  name: string;
-  type: CategoryType;
-  parent_id?: string;
-  color: string;
-  icon: string;
-  description?: string;
-}
-
-export interface UpdateCategoryDto {
-  name?: string;
-  parent_id?: string;
   color?: string;
   icon?: string;
+}
+
+export interface UpdateAccountRequest {
+  name?: string;
+  balance?: string;
   description?: string;
   is_active?: boolean;
+  color?: string;
+  icon?: string;
 }
 
-export interface CreateTransactionDto {
+export interface CreateCategoryRequest {
+  name: string;
+  category_type: CategoryType;
+  parent_id?: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  monthly_budget?: string;
+}
+
+export interface UpdateCategoryRequest {
+  name?: string;
+  parent_id?: string;
+  description?: string;
+  is_active?: boolean;
+  color?: string;
+  icon?: string;
+  monthly_budget?: string;
+}
+
+export interface CreateTransactionRequest {
   account_id: string;
   category_id?: string;
-  amount: number;
-  type: TransactionType;
+  amount: string; // Decimal como string
   description: string;
-  date: string;
-  reference?: string;
+  transaction_date: string;
+  destination_account_id?: string;
+  reference_number?: string;
+  notes?: string;
   tags?: string[];
-  from_account_id?: string;
-  to_account_id?: string;
 }
 
-export interface UpdateTransactionDto {
+export interface UpdateTransactionRequest {
   account_id?: string;
   category_id?: string;
-  amount?: number;
+  amount?: string;
   description?: string;
-  date?: string;
-  reference?: string;
+  transaction_date?: string;
+  destination_account_id?: string;
+  reference_number?: string;
+  notes?: string;
   tags?: string[];
+  is_active?: boolean;
 }
 
 export interface CreateBudgetDto {
@@ -168,4 +201,61 @@ export interface UpdateBudgetDto {
   start_date?: string;
   end_date?: string;
   is_active?: boolean;
+}
+
+// Tipos para importación/exportación YAML
+export interface YAMLTransactionItem {
+  account_name: string;
+  category_name?: string;
+  amount: string;
+  description: string;
+  date: string;
+  destination_account_name?: string;
+  reference_number?: string;
+  notes?: string;
+  tags?: string[];
+}
+
+export interface YAMLImportRequest {
+  transactions: YAMLTransactionItem[];
+  dry_run?: boolean;
+  create_missing_categories?: boolean;
+  default_category_type?: string;
+}
+
+export interface ImportValidationError {
+  row_index: number;
+  field?: string;
+  error: string;
+  transaction?: any;
+}
+
+export interface ImportSummary {
+  total_transactions: number;
+  successful_imports: number;
+  failed_imports: number;
+  created_categories?: number;
+  errors: ImportValidationError[];
+}
+
+export interface YAMLImportResponse {
+  success: boolean;
+  summary: ImportSummary;
+  message: string;
+  created_transaction_ids?: string[];
+}
+
+export interface YAMLExportRequest {
+  account_id?: string;
+  category_id?: string;
+  start_date?: string;
+  end_date?: string;
+  include_inactive?: boolean;
+  format_amounts?: boolean;
+}
+
+export interface YAMLExportResponse {
+  yaml_content: string;
+  transaction_count: number;
+  filename: string;
 }

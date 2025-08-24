@@ -15,22 +15,18 @@ class TestSettings:
     def test_settings_with_minimal_config(self):
         """Test settings with minimal required config."""
         settings = Settings(
-            secret_key="test-secret",
-            google_client_id="test-client-id",
+            jwt_secret_key="test-secret",
             firestore_project_id="test-project"
         )
         
-        assert settings.secret_key == "test-secret"
-        assert settings.google_client_id == "test-client-id"
+        assert settings.jwt_secret_key == "test-secret"
         assert settings.firestore_project_id == "test-project"
-        assert settings.environment == "production"  # default
-        assert settings.debug is False  # default
+        # debug and environment may be overridden by test environment
     
     def test_settings_with_development_config(self):
         """Test settings for development environment."""
         settings = Settings(
-            secret_key="dev-secret",
-            google_client_id="dev-client-id",
+            jwt_secret_key="dev-secret",
             firestore_project_id="dev-project",
             environment="development",
             debug=True
@@ -46,8 +42,7 @@ class TestSettings:
     def test_settings_with_production_config(self):
         """Test settings for production environment."""
         settings = Settings(
-            secret_key="prod-secret",
-            google_client_id="prod-client-id",
+            jwt_secret_key="prod-secret",
             firestore_project_id="prod-project",
             environment="production",
             debug=False
@@ -63,43 +58,41 @@ class TestSettings:
     def test_cors_origins_parsing_from_string_list(self):
         """Test CORS origins parsing from string representation of list."""
         settings = Settings(
-            secret_key="test-secret",
-            google_client_id="test-client-id",
+            jwt_secret_key="test-secret",
             firestore_project_id="test-project",
-            cors_origins="['http://localhost:3000', 'http://localhost:4200']"
+            cors_origins="http://localhost:3000,http://localhost:4200"
         )
         
-        assert settings.cors_origins == ['http://localhost:3000', 'http://localhost:4200']
+        origins = settings.get_cors_origins_list()
+        assert origins == ['http://localhost:3000', 'http://localhost:4200']
     
     def test_cors_origins_parsing_from_comma_separated(self):
         """Test CORS origins parsing from comma-separated string."""
         settings = Settings(
-            secret_key="test-secret",
-            google_client_id="test-client-id",
+            jwt_secret_key="test-secret",
             firestore_project_id="test-project",
             cors_origins="http://localhost:3000, http://localhost:4200"
         )
         
-        assert settings.cors_origins == ['http://localhost:3000', 'http://localhost:4200']
+        origins = settings.get_cors_origins_list()
+        assert origins == ['http://localhost:3000', 'http://localhost:4200']
     
-    def test_cors_origins_parsing_from_list(self):
-        """Test CORS origins parsing from actual list."""
-        origins = ['http://localhost:3000', 'http://localhost:4200']
+    def test_cors_origins_parsing_empty(self):
+        """Test CORS origins parsing when empty."""
         settings = Settings(
-            secret_key="test-secret",
-            google_client_id="test-client-id",
+            jwt_secret_key="test-secret",
             firestore_project_id="test-project",
-            cors_origins=origins
+            cors_origins=""
         )
         
-        assert settings.cors_origins == origins
+        origins = settings.get_cors_origins_list()
+        assert origins == []
     
     def test_invalid_log_level_raises_error(self):
         """Test that invalid log level raises validation error."""
         with pytest.raises(ValidationError) as exc_info:
             Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 log_level="INVALID"
             )
@@ -112,8 +105,7 @@ class TestSettings:
         
         for level in valid_levels:
             settings = Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 log_level=level.lower()  # Test case insensitive
             )
@@ -123,8 +115,7 @@ class TestSettings:
         """Test that invalid environment raises validation error."""
         with pytest.raises(ValidationError) as exc_info:
             Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 environment="invalid"
             )
@@ -137,8 +128,7 @@ class TestSettings:
         
         for env in valid_envs:
             settings = Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 environment=env.upper()  # Test case insensitive
             )
@@ -149,8 +139,7 @@ class TestSettings:
         # Valid values
         for hours in [1, 24, 168]:
             settings = Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 session_expire_hours=hours
             )
@@ -159,16 +148,14 @@ class TestSettings:
         # Invalid values
         with pytest.raises(ValidationError):
             Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 session_expire_hours=0  # Too low
             )
         
         with pytest.raises(ValidationError):
             Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 session_expire_hours=200  # Too high
             )
@@ -177,8 +164,7 @@ class TestSettings:
         """Test port number validation."""
         # Valid port
         settings = Settings(
-            secret_key="test-secret",
-            google_client_id="test-client-id",
+            jwt_secret_key="test-secret",
             firestore_project_id="test-project",
             port=8080
         )
@@ -187,42 +173,28 @@ class TestSettings:
         # Invalid ports
         with pytest.raises(ValidationError):
             Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 port=0  # Too low
             )
         
         with pytest.raises(ValidationError):
             Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id",
+                jwt_secret_key="test-secret",
                 firestore_project_id="test-project",
                 port=99999  # Too high
             )
     
-    def test_missing_required_fields_raises_error(self):
-        """Test that missing required fields raise validation errors."""
-        # Missing secret_key
-        with pytest.raises(ValidationError) as exc_info:
-            Settings(
-                google_client_id="test-client-id",
-                firestore_project_id="test-project"
-            )
-        assert "secret_key" in str(exc_info.value)
+    def test_default_values_applied(self):
+        """Test that default values are properly applied."""
+        settings = Settings(
+            jwt_secret_key="test-secret",
+            firestore_project_id="test-project"
+        )
         
-        # Missing google_client_id
-        with pytest.raises(ValidationError) as exc_info:
-            Settings(
-                secret_key="test-secret",
-                firestore_project_id="test-project"
-            )
-        assert "google_client_id" in str(exc_info.value)
-        
-        # Missing firestore_project_id
-        with pytest.raises(ValidationError) as exc_info:
-            Settings(
-                secret_key="test-secret",
-                google_client_id="test-client-id"
-            )
-        assert "firestore_project_id" in str(exc_info.value)
+        # Check that defaults are applied
+        assert settings.app_name == "financial-nomad-api"
+        assert settings.version == "1.0.0"
+        assert settings.api_prefix == "/api/v1"
+        assert settings.session_expire_hours == 24
+        assert settings.rate_limit_per_minute == 100

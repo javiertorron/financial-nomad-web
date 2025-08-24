@@ -26,17 +26,17 @@ class UserStatus(str, Enum):
 
 
 class User(IdentifiedModel):
-    """User model with Google OAuth integration."""
+    """User model with email/password authentication."""
     
-    # Google OAuth data
-    google_id: str = Field(..., description="Google user ID")
+    # Authentication data
     email: EmailStr
+    password_hash: str = Field(..., description="Bcrypt hashed password")
     name: str = Field(..., min_length=1, max_length=100)
     picture: Optional[str] = Field(None, description="Profile picture URL")
     
     # System data
     role: UserRole = Field(default=UserRole.USER)
-    status: UserStatus = Field(default=UserStatus.PENDING)
+    status: UserStatus = Field(default=UserStatus.ACTIVE)
     
     # Preferences
     locale: str = Field(default="es-ES", max_length=5)
@@ -85,7 +85,7 @@ class Invitation(IdentifiedModel):
 class Session(IdentifiedModel):
     """User session model for JWT tracking."""
     
-    user_id: str = Field(..., description="Google user ID")
+    user_id: str = Field(..., description="User ID")
     jti: str = Field(..., description="JWT ID for token tracking")
     
     # Session metadata
@@ -99,19 +99,18 @@ class Session(IdentifiedModel):
 
 
 # DTOs for API requests/responses
-class GoogleOAuthResponse(BaseModel):
-    """Response from Google OAuth verification."""
-    google_id: str
+class RegisterRequest(BaseModel):
+    """User registration request."""
     email: EmailStr
-    name: str
-    picture: Optional[str]
-    email_verified: bool
+    password: str = Field(..., min_length=8, max_length=128)
+    name: str = Field(..., min_length=1, max_length=100)
+    invitation_code: str = Field(..., description="Required invitation code")
 
 
 class LoginRequest(BaseModel):
-    """Login request with Google token."""
-    google_token: str = Field(..., description="Google OAuth access token")
-    invitation_code: Optional[str] = Field(None, description="Invitation code for new users")
+    """Login request with email/password."""
+    email: EmailStr
+    password: str = Field(..., min_length=1, max_length=128)
 
 
 class LoginResponse(BaseModel):
@@ -135,6 +134,12 @@ class UserProfile(BaseModel):
     currency: str
     last_login: Optional[datetime]
     has_asana_integration: bool = Field(default=False)
+
+
+class RegisterResponse(BaseModel):
+    """Registration response."""
+    message: str
+    user_id: str
 
 
 class UserPreferencesUpdate(BaseModel):

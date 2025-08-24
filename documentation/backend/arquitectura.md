@@ -19,7 +19,7 @@
 - **Framework**: FastAPI (Python 3.11+)
 - **Validacion**: Pydantic v2
 - **Base de datos**: Firestore (modo nativo)
-- **Autenticacion**: Google ID Token + Firebase Auth
+- **Autenticacion**: JWT + bcrypt para passwords
 - **Despliegue**: Cloud Run (Always Free)
 - **Documentacion**: OpenAPI/Swagger automatico
 - **Integraciones**: Asana API, Google Drive API
@@ -94,7 +94,7 @@
 ### 3.1 Estructura de colecciones
 ```
 firestore/
-├── users/{uid}                          # Perfil y configuracion usuario
+├── users/{uid}                          # Email, password_hash, perfil, role y configuracion usuario
 ├── invitations/{code}                   # Invitaciones por email
 ├── accounts/{uid}/                      # Datos financieros por usuario
 │   ├── bank_accounts/{account_id}       # Cuentas bancarias
@@ -138,22 +138,30 @@ match /invitations/{code} {
 ## 4. Autenticacion y autorizacion
 
 ### 4.1 Flujo de autenticacion
+
+**Registro:**
 ```
-Frontend → Google OAuth → ID Token → Backend Validation → Session Cookie
+Frontend → Email/Password + Invite Code → Backend Validation → Hash Password → Create User → JWT
 ```
 
-1. Usuario se autentica con Google (frontend)
-2. Frontend recibe Google ID Token
-3. Backend valida token con Google API
-4. Backend verifica que email tiene invitacion valida
-5. Backend genera session cookie (httpOnly, SameSite)
+**Login:**
+```
+Frontend → Email/Password → Backend Validation → Verify Hash → JWT → Session Cookie
+```
+
+1. **Registro:** Usuario proporciona email/password + código invitación
+2. Backend valida que email coincide con invitación válida
+3. Backend hashea password con bcrypt y crea usuario en Firestore
+4. **Login:** Usuario proporciona email/password
+5. Backend verifica hash de password
+6. Backend genera JWT y session cookie (httpOnly, SameSite)
 
 ### 4.2 Middleware de autenticacion
 ```python
 @router.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    # Validar session cookie o Authorization header
-    # Extraer uid del token validado
+    # Validar JWT en session cookie o Authorization header
+    # Extraer uid del JWT validado
     # Inyectar user_context en request.state
     pass
 ```
@@ -227,7 +235,8 @@ class Settings(BaseSettings):
     firestore_database: str = "(default)"
     
     # Auth
-    google_client_id: str
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
     session_secret_key: str
     
     # Integrations
@@ -237,9 +246,16 @@ class Settings(BaseSettings):
 ```
 
 ### 7.2 Secret Manager
+- `jwt_secret_key`: clave secreta para firmar JWT tokens
 - `asana_client_secret`: credenciales OAuth Asana
 - `session_secret_key`: firma de cookies de sesion
 - `google_service_account`: credenciales para APIs de Google
+
+### 7.3 Usuario maestro
+- **Email**: `javier.torron.diaz@gmail.com`
+- **Password**: `fI07.08511982#` (se almacenará hasheado con bcrypt)
+- **Role**: `admin`
+- **UID**: se generará automáticamente al crear el usuario
 
 ---
 

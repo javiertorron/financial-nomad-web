@@ -3,7 +3,7 @@ Base models for all Pydantic models in the application.
 """
 from datetime import datetime
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
@@ -20,9 +20,9 @@ class TimestampedModel(BaseModel):
 
 
 class IdentifiedModel(TimestampedModel):
-    """Base model with UUID identification and timestamps."""
+    """Base model with string identification and timestamps (Firestore compatible)."""
     
-    id: UUID = Field(default_factory=uuid4)
+    id: Optional[str] = Field(default=None, description="Document ID (set by Firestore)")
 
 
 class SoftDeleteModel(IdentifiedModel):

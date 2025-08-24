@@ -1,0 +1,183 @@
+# Ruff configuration for Financial Nomad backend
+# See: https://docs.astral.sh/ruff/configuration/
+
+# Global settings
+target-version = "py38"
+line-length = 100
+indent-width = 4
+
+# Directories to include/exclude
+include = ["src/**/*.py", "tests/**/*.py"]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "migrations",
+]
+
+[lint]
+# Enable specific rule sets
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "ARG",  # flake8-unused-arguments
+    "SIM",  # flake8-simplify
+    "TID",  # flake8-tidy-imports
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate
+    "RUF",  # ruff-specific rules
+    "N",    # pep8-naming
+    "D",    # pydocstrings
+    "S",    # flake8-bandit
+    "BLE",  # flake8-blind-except
+    "FBT",  # flake8-boolean-trap
+    "A",    # flake8-builtins
+    "COM",  # flake8-commas
+    "C90",  # mccabe complexity
+    "DJ",   # flake8-django
+    "EM",   # flake8-errmsg
+    "EXE",  # flake8-executable
+    "FA",   # flake8-future-annotations
+    "ISC",  # flake8-implicit-str-concat
+    "ICN",  # flake8-import-conventions
+    "G",    # flake8-logging-format
+    "INP",  # flake8-no-pep420
+    "PIE",  # flake8-pie
+    "T20",  # flake8-print
+    "PYI",  # flake8-pyi
+    "Q",    # flake8-quotes
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "SLF",  # flake8-self
+    "SLOT", # flake8-slots
+    "TRY",  # tryceratops
+    "FLY",  # flynt
+    "PERF", # perflint
+    "FURB", # refurb
+    "LOG",  # flake8-logging
+]
+
+# Ignore specific rules
+ignore = [
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D106",   # Missing docstring in public nested class
+    "D107",   # Missing docstring in __init__
+    "S101",   # Use of assert
+    "S104",   # Possible binding to all interfaces
+    "S311",   # Standard pseudo-random generators are not suitable for security/cryptographic purposes
+    "FBT001", # Boolean positional arg in function definition
+    "FBT002", # Boolean default arg in function definition
+    "ARG001", # Unused function argument
+    "ARG002", # Unused method argument
+    "TRY003", # Avoid specifying long messages outside the exception class
+    "EM101",  # Exception must not use a string literal
+    "EM102",  # Exception must not use an f-string literal
+    "B008",   # Do not perform function calls in argument defaults
+    "RUF012", # Mutable class attributes should be annotated with `ClassVar`
+    "COM812", # Missing trailing comma (handled by formatter)
+    "ISC001", # Implicitly concatenated string literals (handled by formatter)
+]
+
+# Allow fix for all enabled rules (when using --fix)
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.per-file-ignores]
+# Tests can use magic values, assertions, and other test-specific patterns
+"tests/**/*.py" = [
+    "S101",   # Use of assert
+    "PLR2004", # Magic value used in comparison
+    "S106",   # Possible hardcoded password
+    "ARG001", # Unused function argument (fixtures)
+    "D",      # Missing docstrings in tests
+    "TRY301", # Abstract `raise` to an inner function
+    "PLR0913", # Too many arguments to function call
+    "SLF001", # Private member accessed
+]
+
+# Configuration files can have different rules
+"src/config.py" = [
+    "S105",   # Possible hardcoded password
+]
+
+# Conftest files have special patterns
+"conftest.py" = [
+    "ARG001", # Unused function argument (fixtures)
+    "D",      # Missing docstrings
+]
+
+# Migration files (if any) have different rules
+"**/migrations/*.py" = [
+    "D",      # Missing docstrings
+    "E501",   # Line too long
+]
+
+[lint.mccabe]
+# Maximum complexity allowed
+max-complexity = 10
+
+[lint.isort]
+# Import sorting configuration
+known-first-party = ["src", "tests"]
+force-sort-within-sections = true
+split-on-trailing-comma = true
+combine-as-imports = true
+
+[lint.pydocstyle]
+# Docstring convention
+convention = "google"
+
+[lint.pylint]
+# Maximum number of arguments for function/method
+max-args = 8
+# Maximum number of attributes for a class
+max-attributes = 12
+# Maximum number of public methods for a class
+max-public-methods = 20
+
+[lint.flake8-quotes]
+# Use double quotes
+docstring-quotes = "double"
+inline-quotes = "double"
+
+[lint.flake8-tidy-imports]
+# Ban certain imports
+ban-relative-imports = "all"
+
+[format]
+# Formatting options (compatible with Black)
+quote-style = "double"
+indent-style = "space"
+skip-source-first-line = false
+line-ending = "auto"

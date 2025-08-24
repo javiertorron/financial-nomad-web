@@ -265,6 +265,16 @@ export class LayoutComponent {
       label: 'Reportes',
       icon: 'assessment',
       route: '/reports'
+    },
+    {
+      label: 'Análisis',
+      icon: 'trending_up',
+      route: '/analytics'
+    },
+    {
+      label: 'Admin',
+      icon: 'admin_panel_settings',
+      route: '/admin'
     }
   ];
 

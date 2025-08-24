@@ -1,18 +1,23 @@
-# Financial Nomad API Backend
+# Financial Nomad API
 
-Backend FastAPI para la aplicación Financial Nomad - gestión de finanzas personales con integración Asana.
+> 🏦 Personal finance management API with Asana integration and advanced analytics
 
-## 🚀 Características
+[![Cloud Run](https://img.shields.io/badge/Google%20Cloud-Cloud%20Run-4285F4?logo=google-cloud)](https://cloud.google.com/run)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-FFCA28?logo=firebase)](https://firebase.google.com)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-- **FastAPI** con OpenAPI/Swagger automático
-- **Autenticación segura** con Google OAuth + invitaciones
-- **Base de datos** Firestore (modo nativo)
-- **Integración Asana** con OAuth y webhooks
-- **Testing completo** con pytest (unit, integration, e2e)
-- **CI/CD** con GitHub Actions
-- **Seguridad** first con middlewares y validaciones
-- **Observabilidad** con logging estructurado
-- **Docker** ready para desarrollo y producción
+## 🌟 Features
+
+- 📊 **Complete Financial Management**: Accounts, transactions, categories, and budgets
+- 📈 **Advanced Analytics**: Comprehensive reporting and insights
+- 🔗 **Asana Integration**: Sync tasks and financial tracking
+- 💾 **Backup & Export**: Full data export to JSON/CSV with Google Drive integration
+- 🔐 **OAuth Authentication**: Secure Google OAuth integration
+- 🚀 **High Performance**: Advanced caching, query optimization, and rate limiting
+- 📊 **Monitoring**: Prometheus metrics and comprehensive health checks
+- 🐳 **Cloud Native**: Optimized for Google Cloud Run deployment
 
 ## 📋 Requisitos
 

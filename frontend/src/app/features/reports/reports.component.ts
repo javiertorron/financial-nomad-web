@@ -1,14 +1,14 @@
 import { Component } from '@angular/core';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import { AdvancedReportsComponent } from './advanced-reports.component';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [LayoutComponent],
+  imports: [LayoutComponent, AdvancedReportsComponent],
   template: `
     <app-layout>
-      <h1>Reportes</h1>
-      <p>Generación de reportes - En desarrollo</p>
+      <app-advanced-reports></app-advanced-reports>
     </app-layout>
   `
 })

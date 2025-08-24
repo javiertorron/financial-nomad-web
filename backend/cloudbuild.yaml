@@ -1,0 +1,118 @@
+# Cloud Build configuration for Financial Nomad API
+# This file defines the build process for containerizing and deploying the API
+
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '--file=Dockerfile.production'
+      - '--tag=${_IMAGE_NAME}'
+      - '--tag=gcr.io/$PROJECT_ID/financial-nomad-api:latest'
+      - '--cache-from=gcr.io/$PROJECT_ID/financial-nomad-api:latest'
+      - '.'
+    timeout: '1200s'
+
+  # Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image'
+    args:
+      - 'push'
+      - '${_IMAGE_NAME}'
+    waitFor: ['build-image']
+
+  # Push the latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-latest'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/financial-nomad-api:latest'
+    waitFor: ['build-image']
+
+  # Security scan with Container Analysis
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'security-scan'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Starting security scan..."
+        gcloud beta container images scan ${_IMAGE_NAME} --quiet || echo "Security scan completed with findings"
+    waitFor: ['push-image']
+
+  # Deploy to Cloud Run (optional, controlled by substitution)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-cloudrun'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if [[ "${_DEPLOY_SERVICE}" == "true" ]]; then
+          echo "Deploying to Cloud Run..."
+          
+          # Create service account if needed
+          if ! gcloud iam service-accounts describe financial-nomad-service@$PROJECT_ID.iam.gserviceaccount.com >/dev/null 2>&1; then
+            gcloud iam service-accounts create financial-nomad-service \
+              --display-name="Financial Nomad API Service Account" \
+              --project=$PROJECT_ID
+          fi
+          
+          # Deploy service
+          gcloud run deploy financial-nomad-api \
+            --image=${_IMAGE_NAME} \
+            --service-account=financial-nomad-service@$PROJECT_ID.iam.gserviceaccount.com \
+            --region=${_DEPLOY_REGION} \
+            --platform=managed \
+            --memory=2Gi \
+            --cpu=1 \
+            --timeout=300 \
+            --concurrency=80 \
+            --min-instances=0 \
+            --max-instances=100 \
+            --port=8080 \
+            --set-env-vars=ENVIRONMENT=production,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIRESTORE_PROJECT_ID=$PROJECT_ID \
+            --allow-unauthenticated \
+            --quiet
+            
+          echo "Deployment completed successfully!"
+        else
+          echo "Skipping deployment (DEPLOY_SERVICE=false)"
+        fi
+    waitFor: ['security-scan']
+
+# Build options
+options:
+  # Use high performance machine type for faster builds
+  machineType: 'N1_HIGHCPU_8'
+  
+  # Enable logging
+  logging: CLOUD_LOGGING_ONLY
+  
+  # Set timeout for entire build
+  timeout: '1800s'
+  
+  # Environment variables for build
+  env:
+    - 'DOCKER_BUILDKIT=1'
+
+# Substitutions (default values)
+substitutions:
+  _IMAGE_NAME: 'gcr.io/$PROJECT_ID/financial-nomad-api:$COMMIT_SHA'
+  _DEPLOY_SERVICE: 'false'  # Set to 'true' to auto-deploy after build
+  _DEPLOY_REGION: 'us-central1'
+
+# Build artifacts
+artifacts:
+  images:
+    - '${_IMAGE_NAME}'
+    - 'gcr.io/$PROJECT_ID/financial-nomad-api:latest'
+
+# Build tags for organization
+tags:
+  - 'financial-nomad-api'
+  - 'backend'
+  - 'production'
+
+# Timeout for the entire build
+timeout: '1800s'

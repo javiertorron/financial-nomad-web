@@ -1,0 +1,112 @@
+# Cloud Run service configuration for Financial Nomad API
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: financial-nomad-api
+  namespace: default
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/cpu-throttling: "false"
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        # Resource limits
+        run.googleapis.com/memory: "2Gi"
+        run.googleapis.com/cpu: "1000m"
+        
+        # Scaling configuration
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "100"
+        
+        # Network settings
+        run.googleapis.com/vpc-access-connector: "default-connector"
+        run.googleapis.com/vpc-access-egress: "all-traffic"
+        
+        # Startup probe configuration
+        run.googleapis.com/startup-cpu-boost: "true"
+        
+    spec:
+      # Service account for Firebase Admin SDK
+      serviceAccountName: financial-nomad-service@PROJECT_ID.iam.gserviceaccount.com
+      
+      # Container timeout and concurrency
+      timeoutSeconds: 300
+      containerConcurrency: 80
+      
+      containers:
+      - name: api
+        image: gcr.io/PROJECT_ID/financial-nomad-api:latest
+        
+        ports:
+        - containerPort: 8080
+          name: http1
+          
+        # Environment variables
+        env:
+        - name: PORT
+          value: "8080"
+        - name: ENVIRONMENT
+          value: "production"
+        - name: DEBUG
+          value: "false"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "PROJECT_ID"
+        - name: FIRESTORE_PROJECT_ID
+          value: "PROJECT_ID"
+        - name: FIRESTORE_DATABASE
+          value: "(default)"
+        
+        # Health checks
+        startupProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8080
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+          
+        livenessProbe:
+          httpGet:
+            path: /api/v1/live
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 30
+          failureThreshold: 3
+          
+        readinessProbe:
+          httpGet:
+            path: /api/v1/ready
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        
+        # Resource requests and limits
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+            
+        # Security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - all
+  
+  traffic:
+  - percent: 100
+    latestRevision: true

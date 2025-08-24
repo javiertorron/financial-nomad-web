@@ -4,6 +4,7 @@ Firestore client implementation with connection pooling and error handling.
 import json
 import os
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Type, TypeVar, Tuple
 from uuid import UUID
 
@@ -68,7 +69,6 @@ class FirestoreService:
             logger.error("Failed to create Firestore client", error=str(e))
             raise DatabaseError(
                 message="Failed to connect to database",
-                code="FIRESTORE_CONNECTION_ERROR",
                 details=[str(e)]
             )
     
@@ -76,15 +76,22 @@ class FirestoreService:
         """Serialize Pydantic model to Firestore document."""
         data = model.dict()
         
-        # Convert UUID to string
+        # Convert UUID to string and Decimal to float for Firestore compatibility
         for key, value in data.items():
             if isinstance(value, UUID):
                 data[key] = str(value)
+            elif isinstance(value, Decimal):
+                data[key] = float(value)
             elif isinstance(value, datetime):
                 data[key] = value
             elif isinstance(value, list):
-                # Handle lists with UUIDs
-                data[key] = [str(item) if isinstance(item, UUID) else item for item in value]
+                # Handle lists with UUIDs and Decimals
+                data[key] = [
+                    str(item) if isinstance(item, UUID) 
+                    else float(item) if isinstance(item, Decimal)
+                    else item 
+                    for item in value
+                ]
         
         return data
     
@@ -145,7 +152,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to create document",
-                code="CREATE_DOCUMENT_ERROR",
                 details=[str(e)]
             )
     
@@ -163,7 +169,8 @@ class FirestoreService:
             if not doc.exists:
                 raise NotFoundError(
                     message=f"Document {document_id} not found",
-                    code="DOCUMENT_NOT_FOUND"
+                    resource_type="document",
+                    resource_id=document_id
                 )
             
             doc_data = doc.to_dict()
@@ -182,7 +189,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to retrieve document",
-                code="GET_DOCUMENT_ERROR",
                 details=[str(e)]
             )
     
@@ -201,7 +207,8 @@ class FirestoreService:
             if not doc_ref.get().exists:
                 raise NotFoundError(
                     message=f"Document {document_id} not found",
-                    code="DOCUMENT_NOT_FOUND"
+                    resource_type="document",
+                    resource_id=document_id
                 )
             
             doc_ref.update(doc_data)
@@ -223,7 +230,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to update document",
-                code="UPDATE_DOCUMENT_ERROR",
                 details=[str(e)]
             )
     
@@ -240,7 +246,8 @@ class FirestoreService:
             if not doc_ref.get().exists:
                 raise NotFoundError(
                     message=f"Document {document_id} not found",
-                    code="DOCUMENT_NOT_FOUND"
+                    resource_type="document",
+                    resource_id=document_id
                 )
             
             doc_ref.delete()
@@ -262,7 +269,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to delete document",
-                code="DELETE_DOCUMENT_ERROR",
                 details=[str(e)]
             )
     
@@ -289,9 +295,18 @@ class FirestoreService:
             
             # Apply ordering
             if order_by:
-                direction = Query.DESCENDING if order_by.startswith("-") else Query.ASCENDING
-                field = order_by.lstrip("-")
-                query = query.order_by(field, direction=direction)
+                if isinstance(order_by, list):
+                    # Handle list of tuples: [("field", "direction"), ...]
+                    for field, direction in order_by:
+                        if direction.lower() in ["desc", "descending"]:
+                            query = query.order_by(field, direction=Query.DESCENDING)
+                        else:
+                            query = query.order_by(field, direction=Query.ASCENDING)
+                else:
+                    # Handle string format: "field" or "-field"
+                    direction = Query.DESCENDING if order_by.startswith("-") else Query.ASCENDING
+                    field = order_by.lstrip("-")
+                    query = query.order_by(field, direction=direction)
             
             # Apply pagination
             if offset:
@@ -329,7 +344,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to query documents",
-                code="QUERY_DOCUMENTS_ERROR",
                 details=[str(e)]
             )
     
@@ -370,7 +384,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to count documents",
-                code="COUNT_DOCUMENTS_ERROR",
                 details=[str(e)]
             )
     
@@ -409,7 +422,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to batch create documents",
-                code="BATCH_CREATE_ERROR",
                 details=[str(e)]
             )
     
@@ -443,7 +455,6 @@ class FirestoreService:
             )
             raise DatabaseError(
                 message="Failed to perform transaction update",
-                code="TRANSACTION_UPDATE_ERROR",
                 details=[str(e)]
             )
 

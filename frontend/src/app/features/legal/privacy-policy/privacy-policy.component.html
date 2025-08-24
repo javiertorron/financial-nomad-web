@@ -9,9 +9,10 @@
       <h2>1. Información que Recopilamos</h2>
       <p>Recopilamos la siguiente información cuando usas nuestra aplicación:</p>
       <ul>
-        <li><strong>Información de cuenta de Google:</strong> Nombre, dirección de email y foto de perfil cuando te autentificas con Google OAuth.</li>
+        <li><strong>Información de cuenta:</strong> Email, nombre y contraseña (almacenada de forma segura con hash bcrypt) cuando te registras.</li>
         <li><strong>Datos financieros:</strong> Información sobre tus cuentas, transacciones, categorías y presupuestos que ingresas voluntariamente.</li>
         <li><strong>Datos de uso:</strong> Información sobre cómo interactúas con nuestra aplicación para mejorar el servicio.</li>
+        <li><strong>Información de sesión:</strong> Tokens de autenticación y metadatos de sesión para mantener tu sesión activa.</li>
       </ul>
     </section>
 
@@ -39,17 +40,24 @@
 
     <section>
       <h2>4. Almacenamiento y Seguridad</h2>
-      <p>Tus datos se almacenan de forma segura en Google Cloud Firestore. Implementamos medidas de seguridad apropiadas para proteger tu información contra acceso no autorizado, alteración, divulgación o destrucción.</p>
+      <p>Tus datos se almacenan de forma segura en Google Cloud Firestore. Implementamos medidas de seguridad apropiadas para proteger tu información:</p>
+      <ul>
+        <li><strong>Contraseñas:</strong> Se almacenan usando hash bcrypt, nunca en texto plano</li>
+        <li><strong>Tokens de sesión:</strong> JWT con expiración automática y validación estricta</li>
+        <li><strong>Acceso a datos:</strong> Reglas de seguridad de Firestore que restringen el acceso solo a datos propios</li>
+        <li><strong>Cifrado:</strong> Todos los datos están cifrados en tránsito y en reposo</li>
+      </ul>
     </section>
 
     <section>
       <h2>5. Integración con Servicios Externos</h2>
       <p>Nuestra aplicación puede integrarse con:</p>
       <ul>
-        <li><strong>Google OAuth:</strong> Para autenticación segura</li>
+        <li><strong>Google Cloud Platform:</strong> Para infraestructura, base de datos y hosting seguro</li>
         <li><strong>Google Drive:</strong> Para backups opcionales de tus datos (solo con tu autorización)</li>
         <li><strong>Asana:</strong> Para importar tareas (opcional y configurable)</li>
       </ul>
+      <p>El registro y acceso a la aplicación requiere un código de invitación válido de un usuario existente.</p>
     </section>
 
     <section>

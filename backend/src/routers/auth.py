@@ -1,5 +1,5 @@
 """
-Authentication endpoints with Google OAuth integration.
+Authentication endpoints with email/password authentication.
 """
 from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Header
@@ -8,6 +8,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from ..models.auth import (
     LoginRequest,
     LoginResponse,
+    RegisterRequest,
+    RegisterResponse,
     UserProfile,
     UserPreferencesUpdate,
     InvitationRequest,
@@ -41,16 +43,45 @@ async def get_current_user(
         )
 
 
+@router.post("/register", status_code=status.HTTP_201_CREATED, response_model=RegisterResponse)
+async def register(
+    request: RegisterRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+) -> RegisterResponse:
+    """
+    Register a new user with email/password.
+    
+    Requires a valid invitation code for the email address.
+    """
+    try:
+        return await auth_service.register(request)
+    except AuthenticationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": e.code,
+                "message": e.message,
+                "details": e.details
+            }
+        )
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": e.code,
+                "message": e.message,
+                "details": e.details
+            }
+        )
+
+
 @router.post("/login", status_code=status.HTTP_200_OK, response_model=LoginResponse)
 async def login(
     request: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service)
 ) -> LoginResponse:
     """
-    Authenticate user with Google OAuth token.
-    
-    For new users, an invitation code is required unless there's
-    an existing invitation for the email address.
+    Authenticate user with email and password.
     """
     try:
         return await auth_service.login(request)
@@ -92,7 +123,7 @@ async def get_profile(
     user, _ = current_user
     
     return UserProfile(
-        id=user.google_id,
+        id=user.id,
         email=user.email,
         name=user.name,
         picture=user.picture,
@@ -129,12 +160,12 @@ async def update_profile(
     firestore = auth_service.firestore
     await firestore.update_document(
         collection="users",
-        document_id=user.google_id,
+        document_id=user.id,
         data=user
     )
     
     return UserProfile(
-        id=user.google_id,
+        id=user.id,
         email=user.email,
         name=user.name,
         picture=user.picture,
@@ -164,7 +195,7 @@ async def create_invitation(
     try:
         invitation = await auth_service.create_invitation(
             email=request.email,
-            invited_by=user.google_id,
+            invited_by=user.id,
             expires_in_days=request.expires_in_days,
             suggested_name=request.suggested_name,
             message=request.message
@@ -196,7 +227,7 @@ async def logout_all_sessions(
 ) -> None:
     """Logout from all sessions (invalidate all user sessions)."""
     user, _ = current_user
-    await auth_service.invalidate_all_user_sessions(user.google_id)
+    await auth_service.invalidate_all_user_sessions(user.id)
 
 
 @router.get("/verify", status_code=status.HTTP_200_OK)
@@ -213,7 +244,35 @@ async def verify_token(
     
     return {
         "valid": True,
-        "user_id": user.google_id,
+        "user_id": user.id,
         "email": user.email,
         "expires_at": session.expires_at.isoformat()
     }
+
+
+@router.post("/init-master", status_code=status.HTTP_201_CREATED)
+async def init_master_user(
+    auth_service: AuthService = Depends(get_auth_service)
+) -> Dict[str, Any]:
+    """
+    Initialize the master admin user.
+    
+    This endpoint can be called during setup to create the initial admin user.
+    It's idempotent - if the user already exists, it returns the existing user info.
+    """
+    try:
+        user = await auth_service.create_master_user()
+        return {
+            "message": "Master user initialized successfully",
+            "user_id": user.id,
+            "email": user.email
+        }
+    except AuthenticationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": e.code,
+                "message": e.message,
+                "details": e.details
+            }
+        )

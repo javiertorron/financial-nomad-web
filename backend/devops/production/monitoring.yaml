@@ -1,0 +1,206 @@
+# Google Cloud Monitoring configuration for Financial Nomad API
+# This file defines alert policies and monitoring dashboards
+
+# Alert Policy Definitions (to be created via gcloud or console)
+alertPolicies:
+  
+  # High Error Rate Alert
+  - displayName: "Financial Nomad API - High Error Rate"
+    documentation:
+      content: "Alert when API error rate exceeds 5% over 5 minutes"
+      mimeType: "text/markdown"
+    conditions:
+      - displayName: "Error rate > 5%"
+        conditionThreshold:
+          filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api"'
+          comparison: COMPARISON_GREATER_THAN
+          thresholdValue: 0.05
+          duration: "300s"
+          aggregations:
+            - alignmentPeriod: "300s"
+              perSeriesAligner: ALIGN_RATE
+              crossSeriesReducer: REDUCE_MEAN
+              groupByFields:
+                - "resource.label.service_name"
+    enabled: true
+    severity: ERROR
+
+  # High Response Time Alert  
+  - displayName: "Financial Nomad API - High Response Time"
+    documentation:
+      content: "Alert when API response time exceeds 2 seconds over 5 minutes"
+      mimeType: "text/markdown"
+    conditions:
+      - displayName: "Response time > 2s"
+        conditionThreshold:
+          filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api"'
+          comparison: COMPARISON_GREATER_THAN
+          thresholdValue: 2000
+          duration: "300s"
+          aggregations:
+            - alignmentPeriod: "300s"
+              perSeriesAligner: ALIGN_MEAN
+              crossSeriesReducer: REDUCE_MEAN
+              groupByFields:
+                - "resource.label.service_name"
+    enabled: true
+    severity: WARNING
+
+  # High Memory Usage Alert
+  - displayName: "Financial Nomad API - High Memory Usage"
+    documentation:
+      content: "Alert when memory usage exceeds 80% over 10 minutes"
+      mimeType: "text/markdown"
+    conditions:
+      - displayName: "Memory usage > 80%"
+        conditionThreshold:
+          filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api"'
+          comparison: COMPARISON_GREATER_THAN
+          thresholdValue: 0.8
+          duration: "600s"
+          aggregations:
+            - alignmentPeriod: "300s"
+              perSeriesAligner: ALIGN_MEAN
+              crossSeriesReducer: REDUCE_MEAN
+              groupByFields:
+                - "resource.label.service_name"
+    enabled: true
+    severity: WARNING
+
+  # Service Down Alert
+  - displayName: "Financial Nomad API - Service Down"
+    documentation:
+      content: "Alert when API health checks fail"
+      mimeType: "text/markdown"
+    conditions:
+      - displayName: "Health check failures"
+        conditionThreshold:
+          filter: 'resource.type="uptime_check" AND resource.labels.check_id="financial-nomad-api-health"'
+          comparison: COMPARISON_EQUAL
+          thresholdValue: 1
+          duration: "60s"
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: ALIGN_COUNT
+              crossSeriesReducer: REDUCE_SUM
+    enabled: true
+    severity: CRITICAL
+
+# Uptime Check Configuration
+uptimeChecks:
+  - displayName: "Financial Nomad API Health Check"
+    monitoredResource:
+      type: "uptime_url"
+      labels:
+        project_id: "${PROJECT_ID}"
+        host: "${API_DOMAIN}"
+    httpCheck:
+      path: "/api/v1/health"
+      port: 443
+      useSsl: true
+      validateSsl: true
+    period: "300s"
+    timeout: "10s"
+    checkerType: STATIC_IP_CHECKERS
+    selectedRegions:
+      - USA
+      - EUROPE
+      - ASIA_PACIFIC
+
+# Log-based Metrics
+logMetrics:
+  
+  # Error Count Metric
+  - name: "financial_nomad_api_errors"
+    description: "Count of API errors by status code"
+    filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api" AND httpRequest.status>=400'
+    labelExtractors:
+      status_code: "EXTRACT(httpRequest.status)"
+      method: "EXTRACT(httpRequest.requestMethod)"
+    metricDescriptor:
+      metricKind: COUNTER
+      valueType: INT64
+
+  # Response Time Metric
+  - name: "financial_nomad_api_response_time"
+    description: "API response times"
+    filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api"'
+    valueExtractor: "EXTRACT(httpRequest.latency)"
+    metricDescriptor:
+      metricKind: GAUGE
+      valueType: DOUBLE
+      unit: "s"
+
+  # Authentication Failures
+  - name: "financial_nomad_api_auth_failures"
+    description: "Count of authentication failures"
+    filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api" AND httpRequest.status=401'
+    metricDescriptor:
+      metricKind: COUNTER
+      valueType: INT64
+
+# Dashboard Configuration (JSON format for Cloud Console import)
+dashboards:
+  financial_nomad_api_overview:
+    displayName: "Financial Nomad API - Overview"
+    mosaicLayout:
+      tiles:
+        - width: 6
+          height: 4
+          widget:
+            title: "Request Rate"
+            xyChart:
+              dataSets:
+                - timeSeriesQuery:
+                    timeSeriesFilter:
+                      filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api"'
+                      aggregation:
+                        alignmentPeriod: "300s"
+                        perSeriesAligner: ALIGN_RATE
+                        crossSeriesReducer: REDUCE_SUM
+                  plotType: LINE
+        
+        - width: 6
+          height: 4
+          widget:
+            title: "Error Rate"
+            xyChart:
+              dataSets:
+                - timeSeriesQuery:
+                    timeSeriesFilter:
+                      filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api" AND httpRequest.status>=400'
+                      aggregation:
+                        alignmentPeriod: "300s"
+                        perSeriesAligner: ALIGN_RATE
+                        crossSeriesReducer: REDUCE_SUM
+                  plotType: LINE
+        
+        - width: 6
+          height: 4
+          widget:
+            title: "Response Time"
+            xyChart:
+              dataSets:
+                - timeSeriesQuery:
+                    timeSeriesFilter:
+                      filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api"'
+                      aggregation:
+                        alignmentPeriod: "300s"
+                        perSeriesAligner: ALIGN_MEAN
+                        crossSeriesReducer: REDUCE_MEAN
+                  plotType: LINE
+
+        - width: 6
+          height: 4
+          widget:
+            title: "Memory Usage"
+            xyChart:
+              dataSets:
+                - timeSeriesQuery:
+                    timeSeriesFilter:
+                      filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="financial-nomad-api"'
+                      aggregation:
+                        alignmentPeriod: "300s"
+                        perSeriesAligner: ALIGN_MEAN
+                        crossSeriesReducer: REDUCE_MEAN
+                  plotType: LINE

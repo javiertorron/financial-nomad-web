@@ -25,8 +25,7 @@ class Settings(BaseSettings):
     environment: str = Field(default="production", description="Environment name")
     
     # Security
-    secret_key: str = Field(..., description="Secret key for JWT tokens")
-    google_client_id: str = Field(..., description="Google OAuth client ID")
+    jwt_secret_key: str = Field(..., description="Secret key for JWT tokens")
     session_expire_hours: int = Field(default=24, ge=1, le=168, description="Session expiration in hours")
     
     # Database
@@ -47,6 +46,39 @@ class Settings(BaseSettings):
         description="Google token verification URL"
     )
     
+    # Asana integration
+    asana_client_id: Optional[str] = Field(default=None, description="Asana OAuth client ID")
+    asana_client_secret: Optional[str] = Field(default=None, description="Asana OAuth client secret")
+    asana_redirect_uri: Optional[str] = Field(
+        default=None, 
+        description="Asana OAuth redirect URI"
+    )
+    asana_encryption_key: Optional[str] = Field(
+        default=None, 
+        description="Key for encrypting Asana tokens"
+    )
+    
+    # Google Drive integration
+    google_client_id: Optional[str] = Field(default=None, description="Google OAuth client ID")
+    google_client_secret: Optional[str] = Field(default=None, description="Google OAuth client secret")
+    google_redirect_uri: Optional[str] = Field(
+        default=None,
+        description="Google OAuth redirect URI"
+    )
+    drive_encryption_key: Optional[str] = Field(
+        default=None,
+        description="Key for encrypting Drive tokens"
+    )
+    
+    # Backup and export settings
+    backup_encryption_key: Optional[str] = Field(
+        default=None,
+        description="Key for encrypting backup files"
+    )
+    backup_retention_days: int = Field(default=90, ge=1, le=365, description="Default backup retention in days")
+    export_temp_dir: Optional[str] = Field(default=None, description="Temporary directory for exports")
+    max_export_size_mb: int = Field(default=500, ge=1, le=2048, description="Maximum export file size in MB")
+    
     # Monitoring and logging
     log_level: str = Field(default="INFO", description="Logging level")
     sentry_dsn: Optional[str] = Field(default=None, description="Sentry DSN for error tracking")
@@ -55,6 +87,28 @@ class Settings(BaseSettings):
     host: str = Field(default="0.0.0.0", description="Server host")
     port: int = Field(default=8080, ge=1, le=65535, description="Server port")
     workers: int = Field(default=1, ge=1, description="Number of worker processes")
+    
+    # Email and notification settings
+    smtp_server: Optional[str] = Field(default=None, description="SMTP server for email notifications")
+    smtp_port: Optional[int] = Field(default=587, description="SMTP port")
+    smtp_username: Optional[str] = Field(default=None, description="SMTP username")
+    smtp_password: Optional[str] = Field(default=None, description="SMTP password")
+    from_email: Optional[str] = Field(default=None, description="From email address")
+    from_name: Optional[str] = Field(default="Financial Nomad", description="From name for emails")
+    
+    # Push notification settings
+    fcm_server_key: Optional[str] = Field(default=None, description="FCM server key for Android push notifications")
+    apns_key_file: Optional[str] = Field(default=None, description="APNS key file path for iOS push notifications")
+    apns_key_id: Optional[str] = Field(default=None, description="APNS key ID")
+    apns_team_id: Optional[str] = Field(default=None, description="APNS team ID")
+    
+    # Frontend settings
+    frontend_url: str = Field(default="http://localhost:4200", description="Frontend application URL")
+    
+    # Redis/Caching settings
+    redis_url: Optional[str] = Field(default=None, description="Redis connection URL")
+    cache_default_ttl: int = Field(default=300, description="Default cache TTL in seconds")
+    cache_max_memory: int = Field(default=100, description="Max cache memory in MB")
     
     def get_cors_origins_list(self) -> List[str]:
         """Get CORS origins as a list."""

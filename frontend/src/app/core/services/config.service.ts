@@ -72,6 +72,10 @@ export class ConfigService {
     return config?.apiUrl || this.defaultConfig.apiUrl;
   }
 
+  get apiUrl(): string {
+    return this.getApiUrl();
+  }
+
   isFeatureEnabled(feature: keyof AppConfig['features']): boolean {
     const config = this._config();
     return config?.features[feature] || this.defaultConfig.features[feature];

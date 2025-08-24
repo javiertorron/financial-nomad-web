@@ -4,13 +4,30 @@ export interface User {
   email: string;
   name: string;
   picture?: string;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
+  role: 'admin' | 'user' | 'guest';
+  status: 'active' | 'inactive' | 'suspended' | 'pending';
+  locale: string;
+  timezone: string;
+  currency: string;
+  last_login?: string;
+  has_asana_integration: boolean;
 }
 
 export interface LoginRequest {
-  google_token: string;
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+  invitation_code: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user_id: string;
 }
 
 export interface LoginResponse {
@@ -25,14 +42,6 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-}
-
-export interface GoogleUser {
-  id: string;
-  email: string;
-  name: string;
-  picture: string;
-  email_verified: boolean;
 }
 
 export interface TokenInfo {
